@@ -5,13 +5,11 @@ export default function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center px-4 py-12 sm:px-6 lg:py-20">
       <div className="mx-auto max-w-2xl text-center">
-        {/* Badge Status */}
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 border border-brand-200">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
           <Zap className="h-3.5 w-3.5" />
           <span>Fase 1: Katalog Instan & Order WhatsApp</span>
         </div>
 
-        {/* Heading */}
         <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
           Katalog Digital UMKM, Pesanan Langsung Masuk WhatsApp
         </h1>
@@ -22,7 +20,6 @@ export default function HomePage() {
           pesanan rapi via WhatsApp.
         </p>
 
-        {/* Action Buttons */}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
             href="/register"
@@ -39,7 +36,6 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Core Pillars */}
         <div className="mt-12 grid grid-cols-1 gap-4 text-left sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-brand-700">
@@ -67,7 +63,7 @@ export default function HomePage() {
             </div>
             <h2 className="mt-3 font-semibold text-slate-900">Nol Biaya Server</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Arsitektur ringan dan cepat (<2 detik) tanpa beban server yang mahal.
+              Arsitektur ringan dan cepat (&lt;2 detik) tanpa beban server yang mahal.
             </p>
           </div>
         </div>
