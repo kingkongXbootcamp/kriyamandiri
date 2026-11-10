@@ -1,5 +1,3 @@
-#### `PROJECT_PROGRESS.md`
-```markdown
 # PROJECT PROGRESS - KRIYAMANDIRI
 
 ## Roadmap Ikhtisar
@@ -19,19 +17,18 @@
 - [x] PROMPT 05: Desain Skema Database, Migration SQL, dan Kebijakan RLS (Selesai)
 
 ### Tahap 2: Backend & Otentikasi Penjual
-- [ ] PROMPT 06: Konfigurasi Supabase Client & Middleware Session (Server & Client Context)
-- [ ] PROMPT 07: Modul Autentikasi Penjual (Registrasi, Login, Logout)
-- [ ] PROMPT 08: Modul Manajemen Profil Toko & Pengaturan Link Slug
+- [x] PROMPT 06: Modul Autentikasi Penjual (Registrasi, Login, Logout, Route Protection) (Selesai)
+- [ ] PROMPT 07: Modul Setup & Manajemen Profil Toko (Nama, WhatsApp 628xxx, Slug Unik)
 
 ### Tahap 3: Manajemen Produk Penjual
-- [ ] PROMPT 09: Modul Kompresi Gambar Client-Side & Upload Storage
-- [ ] PROMPT 10: CRUD Produk & Toggle Ketersediaan Stok (Ada / Habis)
+- [ ] PROMPT 08: Modul Kompresi Gambar Client-Side & Upload Storage
+- [ ] PROMPT 09: CRUD Produk & Toggle Ketersediaan Stok (Ada / Habis)
 
 ### Tahap 4: Katalog Pembeli & Integrasi WhatsApp
-- [ ] PROMPT 11: Halaman Publik Katalog Toko Mobile-First (`/toko/[slug]`)
-- [ ] PROMPT 12: Sistem Keranjang Belanja Ramping & LocalStorage Buyer
-- [ ] PROMPT 13: Logika Generator Format Teks & Redirect wa.me
+- [ ] PROMPT 10: Halaman Publik Katalog Toko Mobile-First (`/toko/[slug]`)
+- [ ] PROMPT 11: Sistem Keranjang Belanja Ramping & LocalStorage Buyer
+- [ ] PROMPT 12: Logika Generator Format Teks & Redirect wa.me
 
 ### Tahap 5: Pengujian & Optimasi
-- [ ] PROMPT 14: Audit Kinerja (Lighthouse Mobile: Target Skor > 90, Loading < 2s pada 4G)
-- [ ] PROMPT 15: Uji Kompatibilitas Tautan WhatsApp (Android, iOS, Web)
+- [ ] PROMPT 13: Audit Kinerja (Lighthouse Mobile: Target Skor > 90, Loading < 2s pada 4G)
+- [ ] PROMPT 14: Uji Kompatibilitas Tautan WhatsApp (Android, iOS, Web)
