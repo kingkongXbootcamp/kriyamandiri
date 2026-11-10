@@ -2,9 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { Database } from "@/types/database";
 
-/**
- * Menyegarkan session cookie dan memeriksa status otentikasi sebelum rute diproses
- */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -18,14 +15,12 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-                setAll(cookiesToSet: any) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+        setAll(cookiesToSet: any) {
+          cookiesToSet.forEach(({ name, value }: any) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value, options }: any) =>
             supabaseResponse.cookies.set(name, value, options)
           );
         },
@@ -33,7 +28,6 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Menggunakan getUser() untuk verifikasi otentikasi token yang aman
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -43,7 +37,6 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/login") || pathname.startsWith("/register");
   const isAdminRoute = pathname.startsWith("/admin");
 
-  // Aturan 1: Cegah pengguna yang belum login mengakses rute admin
   if (!user && isAdminRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -51,7 +44,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Aturan 2: Arahkan penjual yang sudah login langsung ke dashboard jika membuka login/register
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/profile";
