@@ -2,9 +2,11 @@ import { getSellerDashboardData } from "@/actions/dashboard";
 import DashboardView from "@/components/DashboardView";
 import BottomNav from "@/components/Navigation";
 
-export const dynamic = {
+export const dynamic = 'force-dynamic';
+export const metadata = {
   title: "Dashboard Penjual - KRIYAMANDIRI",
 };
+
 
 export default async function DashboardPage() {
   const data = await getSellerDashboardData();
