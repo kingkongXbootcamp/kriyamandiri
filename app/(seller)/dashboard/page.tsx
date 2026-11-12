@@ -2,7 +2,7 @@ import { getSellerDashboardData } from "@/actions/dashboard";
 import DashboardView from "@/components/DashboardView";
 import BottomNav from "@/components/Navigation";
 
-export const metadata = {
+export const dynamic = {
   title: "Dashboard Penjual - KRIYAMANDIRI",
 };
 
