@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, MessageCircle, Store, Zap } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
 export default function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center px-4 py-12 sm:px-6 lg:py-20">
