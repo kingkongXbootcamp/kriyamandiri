@@ -1,3 +1,4 @@
+"use server";
 import { createClient } from "@/lib/supabase/server"; // Sesuaikan path client Supabase Anda
 import { isValidSlug, sanitizeAndValidateWhatsApp } from "@/lib/validators";
 
@@ -6,12 +7,13 @@ export interface StoreInput {
   slug: string;
   description?: string;
   whatsapp_number: string;
+
   logo_url?: string;
 }
 
 // 1. Ambil data toko milik pengguna yang sedang login
 export async function getCurrentUserStore() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error("Akses tidak diizinkan. Silakan login terlebih dahulu.");
@@ -28,7 +30,7 @@ export async function getCurrentUserStore() {
 
 // 2. Cek apakah slug sudah dipakai toko lain
 export async function checkSlugAvailability(slug: string, currentStoreId?: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   let query = supabase
     .from("stores")
@@ -45,7 +47,7 @@ export async function checkSlugAvailability(slug: string, currentStoreId?: strin
 
 // 3. Simpan Toko (Buat Baru atau Update Profil)
 export async function saveStoreProfile(input: StoreInput, existingStoreId?: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error("Sesi login berakhir.");
@@ -71,7 +73,6 @@ export async function saveStoreProfile(input: StoreInput, existingStoreId?: stri
     slug: input.slug.trim(),
     description: input.description?.trim() || null,
     whatsapp_number: phoneValidation.formatted,
-    city: input.city.trim(),
     logo_url: input.logo_url || null,
     updated_at: new Date().toISOString(),
   };
