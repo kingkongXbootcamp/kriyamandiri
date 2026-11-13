@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedSellerStore } from "@/actions/product";
 import ProductForm from "@/components/ProductForm";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 export const metadata = {
   title: "Tambah Produk | KRIYAMANDIRI",
 };
