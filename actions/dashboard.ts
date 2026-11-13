@@ -22,7 +22,7 @@ export interface SellerDashboardPayload {
 }
 
 export async function getSellerDashboardData(): Promise<SellerDashboardPayload> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
