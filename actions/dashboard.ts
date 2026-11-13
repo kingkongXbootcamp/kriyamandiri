@@ -12,7 +12,6 @@ export interface SellerStoreSummary {
   id: string;
   name: string;
   slug: string;
-  city: string;
   logo_url: string | null;
 }
 
