@@ -34,7 +34,7 @@ export async function getSellerDashboardData(): Promise<SellerDashboardPayload> 
   // 1. Ambil profil toko milik user yang sedang login
   const { data: store, error: storeError } = await supabase
     .from("stores")
-    .select("id, name, slug, city, logo_url")
+    .select("id, name, slug, logo_url")
     .eq("user_id", user.id)
     .maybeSingle();
 
