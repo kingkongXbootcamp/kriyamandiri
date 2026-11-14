@@ -8,9 +8,9 @@ import {
 import PublicCatalogClient from "@/components/PublicCatalogClient";
 
 interface PublicStorePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 // SEO Dasar & OpenGraph Preview untuk WhatsApp / Media Sosial
