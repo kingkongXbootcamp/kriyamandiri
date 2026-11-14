@@ -1,6 +1,7 @@
 "use server";
 import { createClient } from "@/lib/supabase/server"; // Sesuaikan path client Supabase Anda
 import { isValidSlug, sanitizeAndValidateWhatsApp } from "@/lib/validators";
+import {revalidatePath} from "next/cache";
 
 export interface StoreInput {
   name: string;

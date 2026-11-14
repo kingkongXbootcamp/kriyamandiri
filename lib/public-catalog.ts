@@ -18,7 +18,6 @@ export interface PublicProduct {
   is_available: boolean;
 }
 
-// Daftar rute internal aplikasi agar tidak bertabrakan dengan slug toko
 const RESERVED_SLUGS = new Set([
   "dashboard",
   "login",
@@ -27,6 +26,9 @@ const RESERVED_SLUGS = new Set([
   "api",
   "admin",
   "settings",
+  "favicon.ico",
+  "robots.txt",
+  "sitemap.xml",
 ]);
 
 export async function getPublicStoreBySlug(slug: string): Promise<PublicStore | null> {
@@ -35,7 +37,7 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStore | 
     return null;
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("stores")
     .select("id, name, slug, description, city, logo_url")
@@ -52,13 +54,13 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStore | 
 export async function getPublicProductsByStoreId(
   storeId: string
 ): Promise<PublicProduct[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
     .select("id, name, price, description, image_url, is_available")
     .eq("store_id", storeId)
     .eq("is_active", true)
-    .order("is_available", { ascending: false }) // Produk tersedia tampil lebih dulu
+    .order("is_available", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error || !data) {
