@@ -8,7 +8,6 @@ export interface StoreInput {
   slug: string;
   description?: string;
   whatsapp_number: string;
-
   logo_url?: string;
 }
 

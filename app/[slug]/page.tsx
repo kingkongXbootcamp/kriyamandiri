@@ -17,7 +17,8 @@ interface PublicStorePageProps {
 export async function generateMetadata({
   params,
 }: PublicStorePageProps): Promise<Metadata> {
-  const store = await getPublicStoreBySlug(params.slug);
+  const { slug } = await params;
+  const store = await getPublicStoreBySlug(slug);
 
   if (!store) {
     return {
@@ -58,7 +59,8 @@ export async function generateMetadata({
 }
 
 export default async function PublicStorePage({ params }: PublicStorePageProps) {
-  const store = await getPublicStoreBySlug(params.slug);
+  const { slug } = await params;
+  const store = await getPublicStoreBySlug(slug);
 
   if (!store) {
     notFound();
