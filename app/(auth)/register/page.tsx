@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { Store, User, Mail, Lock, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { registerAction, type AuthActionResponse } from "@/app/(auth)/actions";
+import { registerAction, type AuthActionResponse } from "@/actions/actions";
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState<

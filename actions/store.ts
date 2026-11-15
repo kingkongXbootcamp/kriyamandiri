@@ -88,6 +88,9 @@ export async function saveStoreProfile(input: StoreInput, existingStoreId?: stri
       .single();
 
     if (error) throw new Error(error.message);
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/profile");
     return { success: true, store: data };
   } else {
     // Mode Pendaftaran Baru
@@ -95,7 +98,8 @@ export async function saveStoreProfile(input: StoreInput, existingStoreId?: stri
       .from("stores")
       .insert({
         ...payload,
-        user_id: user.id,
+        user_id: user.id,  // Wajib ada user_id
+        is_active: true,  // Wajib diset true biar bisa dibaca publi
       })
       .select()
       .single();

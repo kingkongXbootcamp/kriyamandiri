@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
+
 export interface AuthActionResponse {
   success?: boolean;
   error?: string;
@@ -118,7 +119,7 @@ export async function loginAction(
     return { error: error.message };
   }
 
-  redirect(redirectTo.startsWith("/admin") ? redirectTo : "/admin/profile");
+  redirect(redirectTo.startsWith("/dashboard") ? redirectTo : "/dashboard");
 }
 
 /**
