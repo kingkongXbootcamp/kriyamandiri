@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import React from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -8,13 +7,14 @@ import {
 } from "@/lib/public-catalog";
 import PublicCatalogClient from "@/components/PublicCatalogClient";
 
+export const dynamic = "force-dynamic";
+
 interface PublicStorePageProps {
   params: Promise<{
     slug: string;
   }>;
 }
 
-// SEO Dasar & OpenGraph Preview untuk WhatsApp / Media Sosial
 export async function generateMetadata({
   params,
 }: PublicStorePageProps): Promise<Metadata> {
@@ -29,7 +29,7 @@ export async function generateMetadata({
     };
   }
 
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://kriyamandiri.id").replace(
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://kriyamandiri.vercel.app").replace(
     /\/$/,
     ""
   );
@@ -69,7 +69,6 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
 
   const products = await getPublicProductsByStoreId(store.id);
 
-  // Structured Data JSON-LD untuk SEO Mesin Pencari
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
