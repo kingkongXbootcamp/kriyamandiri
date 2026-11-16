@@ -8,9 +8,9 @@ export const metadata = {
 };
 
 interface EditProductPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
@@ -20,8 +20,10 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     redirect("/dashboard/profile");
   }
 
-  // Ambil produk hanya jika milik toko pengguna yang sedang login
-  const product = await getOwnedProductById(params.id);
+  // --- PERUBAHAN DI SINI ---
+  const { id } = await params; 
+  const product = await getOwnedProductById(id);
+  // -------------------------
 
   if (!product) {
     notFound();

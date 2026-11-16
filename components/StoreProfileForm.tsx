@@ -29,8 +29,10 @@ export default function StoreProfileForm({ initialData }: { initialData?: StoreD
   const [successMessage, setSuccessMessage] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const domain = process.env.NEXT_PUBLIC_APP_URL || "kriyamandiri.id";
-  const publicStoreUrl = `${domain}/${formData.slug || "nama-toko"}`;
+  // Bersihin protokol http/https dan trailing slash dari env
+const baseDomain = process.env.NEXT_PUBLIC_APP_URL || "kriyamandiri.id";
+const cleanDomain = baseDomain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+const publicStoreUrl = `https://${cleanDomain}/${formData.slug || "nama-toko"}`;
 
   // Auto-generate slug hanya saat pertama kali membuat toko jika slug belum diedit manual
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,7 +109,7 @@ export default function StoreProfileForm({ initialData }: { initialData?: StoreD
         </label>
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-mono text-blue-900 truncate">
-            https://{publicStoreUrl}
+            {publicStoreUrl}
           </span>
           <button
             type="button"
@@ -156,8 +158,9 @@ export default function StoreProfileForm({ initialData }: { initialData?: StoreD
           </label>
           <div className="flex rounded-lg shadow-sm">
             <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-              {domain}/
+              {cleanDomain}/
             </span>
+            
             <input
               type="text"
               required
