@@ -6,6 +6,7 @@ import {
   getPublicProductsByStoreId,
 } from "@/lib/public-catalog";
 import PublicCatalogClient from "@/components/PublicCatalogClient";
+import PublicHeader from "@/components/PublicHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ interface PublicStorePageProps {
   }>;
 }
 
+// 1. Fungsi buat SEO (Judul tab browser & preview WhatsApp)
 export async function generateMetadata({
   params,
 }: PublicStorePageProps): Promise<Metadata> {
@@ -59,6 +61,7 @@ export async function generateMetadata({
   };
 }
 
+// 2. Fungsi Utama Halaman Katalog
 export default async function PublicStorePage({ params }: PublicStorePageProps) {
   const { slug } = await params;
   const store = await getPublicStoreBySlug(slug);
@@ -88,6 +91,7 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <PublicHeader /> {/* <-- Header KRIYAMANDIRI dipasang di sini */}
       <PublicCatalogClient store={store} products={products} />
     </>
   );
