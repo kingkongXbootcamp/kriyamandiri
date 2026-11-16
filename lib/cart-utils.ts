@@ -77,6 +77,17 @@ export function saveSingleStoreSessionCart(
   }
 }
 
+// Bersihkan sesi keranjang setelah pesanan diteruskan ke WhatsApp
+export function clearSingleStoreSessionCart(): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.removeItem(SESSION_CART_KEY);
+  } catch {
+    // Abaikan error storage
+  }
+}
+
 // Sinkronisasi item keranjang dengan status stok & harga terbaru dari database
 export function syncCartWithCatalog(
   storedItems: CartItem[],

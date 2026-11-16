@@ -1,7 +1,9 @@
+#### `PROJECT_PROGRESS.md`
+```markdown
 # PROJECT PROGRESS - KRIYAMANDIRI
 
 ## Roadmap Ikhtisar
-- [ ] **Bulan 1:** Akuisisi & Validasi (Katalog Instan, Quick Cart, WhatsApp Generator)
+- [x] **Bulan 1 (Fitur Inti):** Akuisisi & Validasi (Katalog Instan, Quick Cart, Checkout Form, WhatsApp Generator)
 - [ ] **Bulan 2:** Monetisasi (Integrasi Logistik Biteship/Shipper, Cek Ongkir, Cetak Resi)
 - [ ] **Bulan 3:** Retensi (Modul Kasir POS Offline & Sinkronisasi Stok)
 
@@ -14,21 +16,23 @@
 - [x] PROMPT 02: Analisis Kebutuhan Sistem / SRS MVP Bulan 1 (Selesai)
 - [x] PROMPT 03: Pemilihan Teknologi & Arsitektur Hemat Biaya (Selesai)
 - [x] PROMPT 04: Struktur Proyek, Konfigurasi Dasar, dan Layout Fondasi (Selesai)
-- [x] PROMPT 05: Desain Skema Database, Migration SQL, dan Kebijakan RLS (Selesai)
+- [x] PROMPT 05: Desain Skema Database, Migration SQL, dan Kebijakan RLS (Selesai & Tersinkronisasi)
 
-### Tahap 2: Backend & Otentikasi Penjual
-- [x] PROMPT 06: Modul Autentikasi Penjual (Registrasi, Login, Logout, Route Protection) (Selesai)
-- [ ] PROMPT 07: Modul Setup & Manajemen Profil Toko (Nama, WhatsApp 628xxx, Slug Unik)
+### Tahap 2: Autentikasi & Profil Toko Penjual
+- [x] PROMPT 06: Modul Autentikasi Penjual (Registrasi, Login, Logout, Proteksi Rute) (Selesai)
+- [x] PROMPT 07: Modul Pendaftaran & Pengaturan Profil Toko (Nama, Slug Unik, WA 628xxx, Kota) (Selesai)
 
-### Tahap 3: Manajemen Produk Penjual
-- [ ] PROMPT 08: Modul Kompresi Gambar Client-Side & Upload Storage
-- [ ] PROMPT 09: CRUD Produk & Toggle Ketersediaan Stok (Ada / Habis)
+### Tahap 3: Dashboard & Manajemen Produk
+- [x] PROMPT 08: Dashboard Utama Penjual Mobile-First dengan Statistik Riil (Selesai)
+- [x] PROMPT 09: Fitur Tambah & Edit Produk 3 Langkah (Selesai)
+- [x] PROMPT 10: Kompresi Foto WebP Client-Side, Upload Storage, & Daftar Produk (Selesai)
 
-### Tahap 4: Katalog Pembeli & Integrasi WhatsApp
-- [ ] PROMPT 10: Halaman Publik Katalog Toko Mobile-First (`/toko/[slug]`)
-- [ ] PROMPT 11: Sistem Keranjang Belanja Ramping & LocalStorage Buyer
-- [ ] PROMPT 12: Logika Generator Format Teks & Redirect wa.me
+### Tahap 4: Katalog Publik, Keranjang & Checkout WhatsApp
+- [x] PROMPT 11: Halaman Katalog Publik `/[slug]` Tanpa Login & SEO Dasar (Selesai)
+- [x] PROMPT 12: Pencarian Produk Instan pada Katalog Publik (Selesai)
+- [x] PROMPT 13: Keranjang Belanja Satu Toko per Sesi & Verifikasi Harga Server (Selesai)
+- [x] PROMPT 14: Halaman Checkout & Formulir Data Pengiriman Pembeli (Selesai)
+- [x] PROMPT 15: Integrasi Pemesanan ke WhatsApp Penjual via Tautan Resmi `wa.me` (Selesai)
 
-### Tahap 5: Pengujian & Optimasi
-- [ ] PROMPT 13: Audit Kinerja (Lighthouse Mobile: Target Skor > 90, Loading < 2s pada 4G)
-- [ ] PROMPT 14: Uji Kompatibilitas Tautan WhatsApp (Android, iOS, Web)
+### Tahap 5: Pengujian Akhir & Kesiapan Produksi
+- [ ] PROMPT 16: Audit Kinerja Mobile (Target < 2 detik di 4G), End-to-End Testing, & Checklist Rilis MVP

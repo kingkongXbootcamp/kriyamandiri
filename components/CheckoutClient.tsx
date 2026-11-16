@@ -11,6 +11,7 @@ import {
 } from "@/types/checkout";
 import {
   calculateCartSummary,
+  clearSingleStoreSessionCart,
   formatRupiah,
   loadSingleStoreSessionCart,
   saveSingleStoreSessionCart,
@@ -24,6 +25,7 @@ import {
   validateBuyerShippingForm,
 } from "@/lib/checkout-validators";
 import { verifyCartOnServer } from "@/actions/cart";
+import { generateWhatsAppOrderLink } from "@/lib/whatsapp-generator";
 
 interface CheckoutClientProps {
   store: PublicStore;
@@ -52,12 +54,16 @@ export default function CheckoutClient({
   const [rememberBuyerData, setRememberBuyerData] = useState(false);
   const [hasStoredProfile, setHasStoredProfile] = useState(false);
 
-  // State validasi & proses submit
+  // State validasi & proses submit WhatsApp
   const [fieldErrors, setFieldErrors] = useState<BuyerFieldErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [verifiedDraft, setVerifiedDraft] =
     useState<VerifiedCheckoutDraft | null>(null);
+  const [whatsappOrderUrl, setWhatsappOrderUrl] = useState<string | null>(null);
+  const [generatedMessagePreview, setGeneratedMessagePreview] = useState<
+    string | null
+  >(null);
 
   // 1. Muat isi keranjang sesi & data pembeli tersimpan (jika pernah disetujui)
   useEffect(() => {
@@ -134,7 +140,7 @@ export default function CheckoutClient({
     setFieldErrors({});
   };
 
-  const handleSubmitCheckout = async (e: React.FormEvent) => {
+  const handleSendToWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 
@@ -142,19 +148,23 @@ export default function CheckoutClient({
     const validation = validateBuyerShippingForm(formData);
     if (!validation.isValid) {
       setFieldErrors(validation.errors);
-      setSubmitError("Mohon lengkapi dan perbaiki data pengiriman yang ditandai merah.");
+      setSubmitError(
+        "Mohon lengkapi dan perbaiki data pengiriman yang ditandai merah."
+      );
       return;
     }
 
     if (cartSummary.items.length === 0) {
-      setSubmitError("Keranjang belanja Anda kosong. Silakan pilih produk terlebih dahulu.");
+      setSubmitError(
+        "Keranjang belanja Anda kosong. Silakan pilih produk terlebih dahulu."
+      );
       return;
     }
 
     setSubmitting(true);
 
     try {
-      // 2. Verifikasi harga & stok terbaru langsung di sisi server
+      // 2. Verifikasi ulang harga, stok, & nomor WA toko langsung di sisi server
       const serverVerification = await verifyCartOnServer(
         store.slug,
         cartSummary.items.map((item) => ({
@@ -163,7 +173,7 @@ export default function CheckoutClient({
         }))
       );
 
-      if (!serverVerification.valid) {
+      if (!serverVerification.valid || !serverVerification.storeWhatsappNumber) {
         setSubmitError(
           serverVerification.errors.join(" ") ||
             "Sebagian produk di keranjang mengalami perubahan stok atau harga."
@@ -172,11 +182,19 @@ export default function CheckoutClient({
         return;
       }
 
-      // 3. Simpan atau hapus data pembeli di localStorage sesuai pilihan persetujuan pengguna
+      // 3. Simpan atau hapus data pembeli di localStorage sesuai persetujuan pengguna
       saveBuyerProfileWithConsent(validation.sanitizedData, rememberBuyerData);
       setHasStoredProfile(rememberBuyerData);
 
-      // 4. Simpan draf pesanan terverifikasi untuk dikirim via WhatsApp penjual
+      // 4. Rakit pesan pesanan otomatis dan URL-encoded link resmi wa.me
+      const generatedOrder = generateWhatsAppOrderLink({
+        storeName: serverVerification.storeName || store.name,
+        storeWhatsappNumber: serverVerification.storeWhatsappNumber,
+        items: serverVerification.items,
+        totalAmount: serverVerification.totalAmount,
+        buyer: validation.sanitizedData,
+      });
+
       const totalQuantity = serverVerification.items.reduce(
         (sum, item) => sum + item.quantity,
         0
@@ -184,7 +202,7 @@ export default function CheckoutClient({
 
       const draft: VerifiedCheckoutDraft = {
         storeId: store.id,
-        storeName: store.name,
+        storeName: serverVerification.storeName || store.name,
         storeSlug: store.slug,
         buyer: validation.sanitizedData,
         items: serverVerification.items,
@@ -195,12 +213,21 @@ export default function CheckoutClient({
       };
 
       saveVerifiedCheckoutDraft(draft);
+      clearSingleStoreSessionCart();
+
       setVerifiedDraft(draft);
-    } catch {
-      setSubmitError(
-        "Terjadi gangguan koneksi saat memverifikasi pesanan. Silakan coba lagi."
-      );
-    } finally {
+      setWhatsappOrderUrl(generatedOrder.whatsappUrl);
+      setGeneratedMessagePreview(generatedOrder.messageText);
+      setSubmitting(false);
+
+      // 5. Buka aplikasi WhatsApp penjual secara langsung (ramah mobile & bebas blokir popup)
+      window.location.assign(generatedOrder.whatsappUrl);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Terjadi gangguan koneksi saat memverifikasi pesanan. Silakan coba lagi.";
+      setSubmitError(message);
       setSubmitting(false);
     }
   };
@@ -215,6 +242,111 @@ export default function CheckoutClient({
             Memuat ringkasan pesanan...
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Tampilan setelah pesanan berhasil diteruskan ke WhatsApp penjual
+  if (verifiedDraft && whatsappOrderUrl) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
+          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+            <Link
+              href={`/${store.slug}`}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-700 transition"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              <span>Kembali ke Katalog</span>
+            </Link>
+            <span className="text-xs font-extrabold text-emerald-700 truncate max-w-[170px]">
+              {store.name}
+            </span>
+          </div>
+        </header>
+
+        <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-5 pb-12 space-y-4">
+          <section className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-base font-extrabold text-gray-900">
+                  Pesanan Siap Dikirim via WhatsApp
+                </h1>
+                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                  Jika aplikasi WhatsApp tidak terbuka otomatis, tekan tombol
+                  hijau di bawah ini lalu tekan tombol{" "}
+                  <strong>Kirim (Send)</strong> di WhatsApp.
+                </p>
+              </div>
+            </div>
+
+            {/* Peringatan Status Pesanan yang Jujur */}
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+              <strong>Penting:</strong> Pesanan ini{" "}
+              <strong>belum dibayar dan belum diterima penjual</strong> sebelum
+              Anda mengirimkan pesan di WhatsApp serta menerima balasan total
+              ongkir dan nomor rekening dari <strong>{verifiedDraft.storeName}</strong>.
+            </div>
+
+            {/* Tombol Cadangan Buka WhatsApp */}
+            <a
+              href={whatsappOrderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#1EBE5D] active:scale-[0.99] text-white text-sm font-extrabold rounded-xl shadow-sm transition"
+            >
+              <span>Buka WhatsApp Penjual Sekarang</span>
+            </a>
+
+            {/* Pratinjau Teks Pesan yang Dihasilkan */}
+            {generatedMessagePreview && (
+              <div className="space-y-1.5 pt-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                  Pratinjau Format Pesan WhatsApp
+                </p>
+                <pre className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-[11px] text-gray-800 whitespace-pre-wrap font-sans leading-relaxed">
+                  {generatedMessagePreview}
+                </pre>
+              </div>
+            )}
+
+            <div className="pt-1">
+              <Link
+                href={`/${store.slug}`}
+                className="flex items-center justify-center w-full py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold rounded-xl transition"
+              >
+                Kembali ke Katalog Toko
+              </Link>
+            </div>
+          </section>
+        </main>
       </div>
     );
   }
@@ -281,7 +413,7 @@ export default function CheckoutClient({
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between gap-2">
           <Link
             href={`/${store.slug}`}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-700 py-1.5 px-2 -ml-2 rounded-lg hover:bg-gray-100 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-700 py-1.5 transition"
           >
             <svg
               className="w-4 h-4 shrink-0"
@@ -298,7 +430,6 @@ export default function CheckoutClient({
             </svg>
             <span>Kembali ke Katalog</span>
           </Link>
-
           <span className="text-xs font-extrabold text-emerald-700 truncate max-w-[170px]">
             {store.name}
           </span>
@@ -355,22 +486,20 @@ export default function CheckoutClient({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-400 text-center px-0.5">
+                      <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-400 text-center px-1">
                         Produk
                       </div>
                     )}
                   </div>
-
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">
                       {item.name}
                     </p>
                     <p className="text-[11px] text-gray-500 mt-0.5">
-                      {item.quantity} × {formatRupiah(item.price)}
+                      {item.quantity} &times; {formatRupiah(item.price)}
                     </p>
                   </div>
                 </div>
-
                 <span className="text-xs font-extrabold text-gray-900 shrink-0">
                   {formatRupiah(item.subtotal)}
                 </span>
@@ -386,7 +515,6 @@ export default function CheckoutClient({
                 {cartSummary.totalItems} barang ({cartSummary.items.length} jenis produk)
               </span>
             </div>
-
             <div className="flex items-center justify-between text-sm pt-1">
               <span className="font-bold text-gray-900">Total Harga Barang</span>
               <span className="text-base font-extrabold text-emerald-700">
@@ -447,7 +575,7 @@ export default function CheckoutClient({
             </div>
           )}
 
-          <form onSubmit={handleSubmitCheckout} noValidate className="space-y-3.5">
+          <form onSubmit={handleSendToWhatsApp} noValidate className="space-y-3.5">
             {/* 1. Nama Lengkap */}
             <div>
               <label
@@ -595,7 +723,7 @@ export default function CheckoutClient({
               )}
             </div>
 
-            {/* 6. Provinsi (Opsional / Jika Diperlukan) */}
+            {/* 6. Provinsi (Opsional) */}
             <div>
               <label
                 htmlFor="buyer-province"
@@ -641,48 +769,30 @@ export default function CheckoutClient({
               </label>
             </div>
 
-            {/* Hasil Validasi & Siap Lanjut Konfirmasi Pesanan */}
-            {verifiedDraft && (
-              <div
-                role="status"
-                className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs space-y-1.5"
-              >
-                <p className="font-extrabold text-emerald-800">
-                  ✓ Data pengiriman & total pesanan terverifikasi
-                </p>
-                <p>
-                  Penerima: <strong>{verifiedDraft.buyer.fullName}</strong> (
-                  {verifiedDraft.buyer.whatsappNumber})
-                </p>
-                <p>
-                  Tujuan: {verifiedDraft.buyer.fullAddress}, Kec.{" "}
-                  {verifiedDraft.buyer.district}, {verifiedDraft.buyer.city}
-                  {verifiedDraft.buyer.province
-                    ? `, ${verifiedDraft.buyer.province}`
-                    : ""}
-                </p>
-                <p className="font-bold pt-1">
-                  Total Barang: {formatRupiah(verifiedDraft.subtotalAmount)}{" "}
-                  (Belum termasuk ongkir)
-                </p>
-              </div>
-            )}
-
-            {/* Tombol Aksi Utama & Kembali ke Katalog */}
+            {/* Tombol Kirim Pesanan ke WhatsApp Penjual & Kembali ke Katalog */}
             <div className="pt-2 space-y-2.5">
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-50 text-white text-sm font-extrabold rounded-2xl shadow-sm transition"
+                className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#1EBE5D] active:scale-[0.99] disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition flex items-center justify-center gap-2"
               >
-                {submitting
-                  ? "Memverifikasi Data..."
-                  : "Simpan & Konfirmasi Data Pesanan"}
+                <svg
+                  className="w-5 h-5 shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z" />
+                </svg>
+                <span>
+                  {submitting
+                    ? "Memverifikasi Pesanan..."
+                    : "KIRIM PESANAN KE WHATSAPP PENJUAL"}
+                </span>
               </button>
 
               <Link
                 href={`/${store.slug}`}
-                className="flex items-center justify-center w-full py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold rounded-2xl transition"
+                className="flex items-center justify-center w-full py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold rounded-xl transition"
               >
                 Kembali ke Katalog
               </Link>

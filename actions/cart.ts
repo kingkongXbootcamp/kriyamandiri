@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { sanitizeAndValidateWhatsApp } from "@/lib/validators";
 import {
   ServerCartItemInput,
   ServerCartVerificationResult,
@@ -51,11 +52,11 @@ export async function verifyCartOnServer(
     };
   }
 
-  // 1. Verifikasi toko aktif berdasarkan slug
+  // 1. Verifikasi toko aktif & nomor WhatsApp resmi toko berdasarkan slug
   const cleanSlug = decodeURIComponent(storeSlug).toLowerCase().trim();
   const { data: store, error: storeError } = await supabase
     .from("stores")
-    .select("id, name, slug")
+    .select("id, name, slug, whatsapp_number")
     .eq("slug", cleanSlug)
     .maybeSingle();
 
@@ -66,6 +67,19 @@ export async function verifyCartOnServer(
       subtotalAmount: 0,
       totalAmount: 0,
       errors: ["Toko tidak ditemukan."],
+    };
+  }
+
+  const storeWaCheck = sanitizeAndValidateWhatsApp(store.whatsapp_number || "");
+  if (!storeWaCheck.isValid) {
+    return {
+      valid: false,
+      items: [],
+      subtotalAmount: 0,
+      totalAmount: 0,
+      errors: [
+        "Nomor WhatsApp toko tujuan belum diatur dengan benar oleh penjual.",
+      ],
     };
   }
 
@@ -158,6 +172,7 @@ export async function verifyCartOnServer(
     storeId: store.id,
     storeName: store.name,
     storeSlug: store.slug,
+    storeWhatsappNumber: storeWaCheck.formatted,
     items: verifiedItems,
     subtotalAmount,
     totalAmount: subtotalAmount,
