@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { CartSummary, ServerCartVerificationResult } from "@/types/cart";
+import { useRouter } from "next/navigation";
+import { CartSummary } from "@/types/cart";
 import { formatRupiah } from "@/lib/cart-utils";
 import { verifyCartOnServer } from "@/actions/cart";
 
@@ -28,33 +29,37 @@ export default function CartDrawer({
   onRemoveItem,
   onClearCart,
 }: CartDrawerProps) {
-  const [verifying, setVerifying] = useState(false);
-  const [verificationResult, setVerificationResult] =
-    useState<ServerCartVerificationResult | null>(null);
+  const router = useRouter();
+  const [proceeding, setProceeding] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   if (!isOpen) return null;
 
-  const handleVerifyServerPrice = async () => {
-    setVerifying(true);
-    setVerificationResult(null);
+  const handleProceedToCheckout = async () => {
+    setProceeding(true);
+    setValidationErrors([]);
 
     try {
       const payload = summary.items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
       }));
+
       const result = await verifyCartOnServer(storeSlug, payload);
-      setVerificationResult(result);
+
+      if (!result.valid) {
+        setValidationErrors(result.errors);
+        setProceeding(false);
+        return;
+      }
+
+      onClose();
+      router.push(`/${storeSlug}/checkout`);
     } catch {
-      setVerificationResult({
-        valid: false,
-        items: [],
-        subtotalAmount: 0,
-        totalAmount: 0,
-        errors: ["Terjadi gangguan koneksi saat memverifikasi harga ke server."],
-      });
-    } finally {
-      setVerifying(false);
+      setValidationErrors([
+        "Terjadi gangguan koneksi saat memverifikasi keranjang. Silakan coba lagi.",
+      ]);
+      setProceeding(false);
     }
   };
 
@@ -65,10 +70,8 @@ export default function CartDrawer({
       aria-label="Keranjang Belanja"
       className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-[1px]"
     >
-      {/* Area klik backdrop untuk menutup drawer */}
       <div className="flex-1" onClick={onClose} />
 
-      {/* Panel Slide-Up Keranjang */}
       <div className="w-full max-w-lg mx-auto bg-white rounded-t-3xl shadow-2xl border-t border-gray-200 max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header Drawer */}
         <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white">
@@ -86,7 +89,7 @@ export default function CartDrawer({
               <button
                 type="button"
                 onClick={() => {
-                  setVerificationResult(null);
+                  setValidationErrors([]);
                   onClearCart();
                 }}
                 className="px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition"
@@ -118,7 +121,7 @@ export default function CartDrawer({
           </div>
         </div>
 
-        {/* Daftar Item di Keranjang */}
+        {/* Daftar Item */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {summary.items.length === 0 ? (
             <div className="py-10 text-center">
@@ -135,7 +138,6 @@ export default function CartDrawer({
                 key={item.productId}
                 className="p-3 rounded-2xl border border-gray-200 bg-gray-50/70 flex gap-3"
               >
-                {/* Thumbnail Produk */}
                 <div className="w-16 h-16 rounded-xl bg-white border border-gray-200 overflow-hidden shrink-0">
                   {item.image_url ? (
                     <img
@@ -150,7 +152,6 @@ export default function CartDrawer({
                   )}
                 </div>
 
-                {/* Rincian & Kontrol Kuantitas */}
                 <div className="min-w-0 flex-1 flex flex-col justify-between">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 leading-snug">
@@ -159,7 +160,7 @@ export default function CartDrawer({
                     <button
                       type="button"
                       onClick={() => {
-                        setVerificationResult(null);
+                        setValidationErrors([]);
                         onRemoveItem(item.productId);
                       }}
                       aria-label={`Hapus ${item.name} dari keranjang`}
@@ -174,12 +175,11 @@ export default function CartDrawer({
                   </p>
 
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    {/* Stepper Kuantitas */}
                     <div className="inline-flex items-center bg-white border border-gray-300 rounded-xl p-0.5">
                       <button
                         type="button"
                         onClick={() => {
-                          setVerificationResult(null);
+                          setValidationErrors([]);
                           onDecreaseQty(item.productId);
                         }}
                         aria-label={`Kurangi ${item.name}`}
@@ -193,7 +193,7 @@ export default function CartDrawer({
                       <button
                         type="button"
                         onClick={() => {
-                          setVerificationResult(null);
+                          setValidationErrors([]);
                           onIncreaseQty(item.productId);
                         }}
                         aria-label={`Tambah ${item.name}`}
@@ -203,7 +203,6 @@ export default function CartDrawer({
                       </button>
                     </div>
 
-                    {/* Subtotal per Item */}
                     <div className="text-right">
                       <span className="block text-[10px] text-gray-500">
                         Subtotal
@@ -218,40 +217,19 @@ export default function CartDrawer({
             ))
           )}
 
-          {/* Hasil Verifikasi Harga & Stok Sisi Server */}
-          {verificationResult && (
-            <div
-              className={`p-3 rounded-xl border text-xs ${
-                verificationResult.valid
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                  : "bg-rose-50 border-rose-200 text-rose-800"
-              }`}
-            >
-              {verificationResult.valid ? (
-                <div className="space-y-1">
-                  <p className="font-bold">
-                    ✓ Harga & ketersediaan stok terverifikasi server
-                  </p>
-                  <p>
-                    Total sah dari database:{" "}
-                    <strong>{formatRupiah(verificationResult.totalAmount)}</strong>
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <p className="font-bold">Perhatian Validasi Server:</p>
-                  <ul className="list-disc pl-4 space-y-0.5">
-                    {verificationResult.errors.map((err, idx) => (
-                      <li key={idx}>{err}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+          {validationErrors.length > 0 && (
+            <div className="p-3 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 text-xs space-y-1">
+              <p className="font-bold">Perhatian Validasi Keranjang:</p>
+              <ul className="list-disc pl-4 space-y-0.5">
+                {validationErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
 
-        {/* Footer Ringkasan Subtotal & Total Harga */}
+        {/* Footer Subtotal & Navigasi ke Halaman Checkout */}
         {summary.items.length > 0 && (
           <div className="p-4 border-t border-gray-200 bg-white space-y-3">
             <div className="space-y-1.5 text-xs">
@@ -262,11 +240,14 @@ export default function CartDrawer({
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm pt-1.5 border-t border-dashed border-gray-200">
-                <span className="font-bold text-gray-900">Total Harga</span>
+                <span className="font-bold text-gray-900">Total Harga Barang</span>
                 <span className="text-base font-extrabold text-emerald-700">
                   {formatRupiah(summary.totalAmount)}
                 </span>
               </div>
+              <p className="text-[11px] text-gray-500">
+                * Belum termasuk ongkos kirim
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -280,11 +261,11 @@ export default function CartDrawer({
 
               <button
                 type="button"
-                disabled={verifying}
-                onClick={handleVerifyServerPrice}
+                disabled={proceeding}
+                onClick={handleProceedToCheckout}
                 className="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-sm transition"
               >
-                {verifying ? "Memverifikasi..." : "Verifikasi Harga"}
+                {proceeding ? "Memproses..." : "Lanjut Checkout"}
               </button>
             </div>
           </div>
