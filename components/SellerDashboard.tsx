@@ -2,46 +2,55 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import {
+  Plus,
+  ExternalLink,
+  Share2,
+  Check,
+  Store as StoreIcon,
+  MessageCircle,
+  MapPin,
+  Sparkles,
+} from "lucide-react";
 import { SellerDashboardPayload } from "@/actions/dashboard";
 
-export default function SellerDashboard({ data }: { data: SellerDashboardPayload }) {
+export default function SellerDashboard({
+  data,
+}: {
+  data: SellerDashboardPayload;
+}) {
   const [copied, setCopied] = useState(false);
   const { store, stats } = data;
 
-  // Arahkan penjual melengkapi profil toko jika belum terdaftar
   if (!store) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center shadow-sm mt-4">
-        <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+      <div className="mx-auto mt-4 max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+          <StoreIcon className="h-7 w-7" />
         </div>
-        <h2 className="text-base font-bold text-gray-900 mb-1">Profil Toko Belum Dibuat</h2>
-        <p className="text-sm text-gray-500 mb-5">
-          Lengkapi nama toko dan nomor WhatsApp Anda terlebih dahulu agar katalog online dapat digunakan.
+        <h1 className="mt-4 text-lg font-extrabold text-slate-900">
+          Profil Toko Belum Dibuat
+        </h1>
+        <p className="mt-1.5 text-xs leading-relaxed text-slate-500 sm:text-sm">
+          Lengkapi nama toko, lokasi kota, dan nomor WhatsApp penerima pesanan
+          agar katalog online Anda aktif.
         </p>
         <Link
           href="/dashboard/profile"
-          className="inline-flex items-center justify-center w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition"
+          className="mt-6 flex min-h-[48px] w-full items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
         >
-          Lengkapi Profil Toko
+          Lengkapi Profil Toko Sekarang
         </Link>
       </div>
     );
   }
 
   const baseDomain = process.env.NEXT_PUBLIC_APP_URL || "kriyamandiri.id";
-  const cleanDomain = baseDomain.replace(/^https?:\/\//, "");
+  const cleanDomain = baseDomain.replace(/^https?:\/\//, "").replace(/\/$/, "");
   const publicStoreUrl = `https://${cleanDomain}/${store.slug}`;
 
   const handleCopyOrShare = async () => {
-    const shareText = `Halo! Silakan lihat katalog produk *${store.name}* dan pesan langsung lewat WhatsApp di sini:\n${publicStoreUrl}`;
+    const shareText = `Halo! Silakan lihat katalog produk *${store.name}* dan pesan langsung lewat WhatsApp di sini:`;
 
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
@@ -52,7 +61,7 @@ export default function SellerDashboard({ data }: { data: SellerDashboardPayload
         });
         return;
       } catch {
-        // Lanjut ke fallback copy clipboard jika pengguna menutup dialog share
+        // Lanjut ke fallback copy clipboard jika dialog share dibatalkan
       }
     }
 
@@ -70,141 +79,156 @@ export default function SellerDashboard({ data }: { data: SellerDashboardPayload
   )}`;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-5">
       {/* 1. Kartu Identitas Toko */}
-      <section className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <div className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold text-xl shrink-0 overflow-hidden">
-            {store.logo_url ? (
-              <img
-                src={store.logo_url}
-                alt={`Logo ${store.name}`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              store.name.charAt(0).toUpperCase()
-            )}
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 text-lg font-extrabold text-emerald-700">
+              {store.logo_url ? (
+                <img
+                  src={store.logo_url}
+                  alt={`Logo ${store.name}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                store.name.charAt(0).toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-base font-extrabold text-slate-900 sm:text-lg">
+                {store.name}
+              </h1>
+              <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                <span className="truncate">{store.city}</span>
+              </p>
+              <span className="mt-1.5 inline-block max-w-full truncate rounded-lg bg-emerald-50 px-2 py-0.5 font-mono text-[11px] font-medium text-emerald-700">
+                {cleanDomain}/{store.slug}
+              </span>
+            </div>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-bold text-gray-900 truncate">{store.name}</h1>
-            <p className="text-xs text-gray-500 truncate mt-0.5">{store.city}</p>
-            <p className="text-xs font-mono text-emerald-700 bg-emerald-50 inline-block px-2 py-0.5 rounded mt-1.5 truncate max-w-full">
-              {cleanDomain}/{store.slug}
-            </p>
-          </div>
+          <Link
+            href="/dashboard/profile"
+            className="hidden min-h-[40px] shrink-0 items-center rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
+          >
+            Edit Profil
+          </Link>
         </div>
       </section>
 
       {/* 2. Ringkasan Statistik Produk Riil */}
       <section aria-label="Statistik Produk">
-        <div className="grid grid-cols-3 gap-2.5">
-          <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm text-center">
-            <p className="text-xs font-medium text-gray-500">Jumlah Produk</p>
-            <p className="text-2xl font-extrabold text-gray-900 mt-1">
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 text-center shadow-sm sm:p-4">
+            <p className="text-[11px] font-semibold text-slate-500 sm:text-xs">
+              Jumlah Produk
+            </p>
+            <p className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">
               {stats.totalProducts}
             </p>
           </div>
 
-          <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm text-center">
-            <p className="text-xs font-medium text-emerald-700">Produk Aktif</p>
-            <p className="text-2xl font-extrabold text-emerald-600 mt-1">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 text-center shadow-sm sm:p-4">
+            <p className="text-[11px] font-semibold text-emerald-700 sm:text-xs">
+              Produk Aktif
+            </p>
+            <p className="mt-1 text-2xl font-extrabold text-emerald-600 sm:text-3xl">
               {stats.activeProducts}
             </p>
           </div>
 
-          <div className="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm text-center">
-            <p className="text-xs font-medium text-rose-600">Produk Habis</p>
-            <p className="text-2xl font-extrabold text-rose-600 mt-1">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3.5 text-center shadow-sm sm:p-4">
+            <p className="text-[11px] font-semibold text-rose-600 sm:text-xs">
+              Produk Habis
+            </p>
+            <p className="mt-1 text-2xl font-extrabold text-rose-600 sm:text-3xl">
               {stats.outOfStockProducts}
             </p>
           </div>
         </div>
       </section>
 
-      {/* 3. Tombol Aksi Utama: Tambah Produk */}
-      <section>
+      {/* 3. Tombol Aksi Utama & Katalog (Grid Adaptif Desktop) */}
+      <section className="grid grid-cols-1 gap-2.5 sm:grid-cols-12 sm:gap-3">
         <Link
           href="/dashboard/products/new"
-          className="flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-sm rounded-2xl shadow-sm transition"
+          className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] sm:col-span-6"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
+          <Plus className="h-5 w-5" />
           <span>Tambah Produk</span>
         </Link>
-      </section>
 
-      {/* 4. Tombol Aksi Katalog & Bagikan Link */}
-      <section className="grid grid-cols-2 gap-2.5">
-        <a
-          href={`/${store.slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 py-3 px-3 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 font-semibold text-xs rounded-2xl shadow-sm transition"
-        >
-          <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-            />
-          </svg>
-          <span>Lihat Katalog</span>
-        </a>
+        <div className="grid grid-cols-2 gap-2.5 sm:col-span-6">
+          <a
+            href={`/${store.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold text-slate-800 transition hover:bg-slate-50 active:scale-[0.98] sm:text-sm"
+          >
+            <ExternalLink className="h-4 w-4 shrink-0 text-slate-600" />
+            <span>Lihat Katalog</span>
+          </a>
 
-        <button
-          type="button"
-          onClick={handleCopyOrShare}
-          className="flex items-center justify-center gap-2 py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-2xl shadow-sm transition"
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-            />
-          </svg>
-          <span>{copied ? "Link Tersalin!" : "Bagikan Link Toko"}</span>
-        </button>
-      </section>
-
-      {/* 5. Kartu Tautan Cepat Sebar ke WhatsApp */}
-      <section className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3">
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Tautan Katalog Toko Anda
-          </h2>
-          <p className="text-sm font-mono text-gray-800 break-all mt-1 select-all">
-            {publicStoreUrl}
-          </p>
+          <button
+            type="button"
+            onClick={handleCopyOrShare}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 active:scale-[0.98] sm:text-sm"
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+                <span>Tersalin!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="h-4 w-4 shrink-0 text-emerald-700" />
+                <span>Bagikan Link</span>
+              </>
+            )}
+          </button>
         </div>
-
-        <a
-          href={whatsappShareHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl transition"
-        >
-          <span>Bagikan Langsung via WhatsApp</span>
-        </a>
       </section>
 
-      {/* 6. Informasi Status Katalog Kosong (Hanya tampil jika data produk = 0) */}
+      {/* 4. Kartu Tautan Katalog & Sebar ke WhatsApp */}
+      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <div className="min-w-0">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Tautan Katalog Publik Toko
+            </h2>
+            <p className="mt-1 select-all break-all font-mono text-xs font-medium text-slate-800 sm:text-sm">
+              {publicStoreUrl}
+            </p>
+          </div>
+
+          <a
+            href={whatsappShareHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#1EBE5D] active:scale-[0.98]"
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>Bagikan ke WhatsApp</span>
+          </a>
+        </div>
+      </section>
+
+      {/* 5. Panduan Katalog Kosong (Hanya tampil jika jumlah produk = 0) */}
       {stats.totalProducts === 0 && (
-        <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <h3 className="text-sm font-bold text-amber-900">Belum ada produk di katalog</h3>
-          <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-            Tambahkan foto, nama, dan harga produk pertama Anda sekarang agar pembeli bisa mulai memesan melalui WhatsApp.
-          </p>
+        <section className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div>
+            <h3 className="text-sm font-bold text-amber-950">
+              Katalog Anda masih kosong
+            </h3>
+            <p className="mt-1 text-xs leading-relaxed text-amber-800">
+              Tekan tombol <strong>Tambah Produk</strong> di atas untuk
+              mengunggah foto, nama, dan harga produk pertama Anda agar pembeli
+              dapat langsung memesan via WhatsApp.
+            </p>
+          </div>
         </section>
       )}
     </div>
