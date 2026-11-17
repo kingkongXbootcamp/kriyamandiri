@@ -4,7 +4,7 @@ import { Suspense, useActionState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Store, Mail, Lock, AlertCircle, Loader2, ArrowLeft } from "lucide-react";
-import { loginAction, type AuthActionResponse } from "@/app/(auth)/actions";
+import { loginAction, type AuthActionResponse } from "@/actions/auth";
 
 function LoginFormContent() {
   const searchParams = useSearchParams();

@@ -12,7 +12,7 @@ import {
   Loader2,
   ArrowLeft,
 } from "lucide-react";
-import { registerAction, type AuthActionResponse } from "@/app/(auth)/actions";
+import { registerAction, type AuthActionResponse } from "@/actions/auth";
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState<
