@@ -3,7 +3,7 @@
 # PROJECT PROGRESS - KRIYAMANDIRI
 
 ## Roadmap Ikhtisar
-- [x] **Bulan 1 (Fitur Inti):** Akuisisi & Validasi (Katalog Instan, Quick Cart, Checkout Form, WhatsApp Generator)
+- [x] **Bulan 1 (Fitur Inti & UI/UX):** Akuisisi & Validasi (Katalog Instan, Quick Cart, Checkout Form, WhatsApp Generator)
 - [ ] **Bulan 2:** Monetisasi (Integrasi Logistik Biteship/Shipper, Cek Ongkir, Cetak Resi)
 - [ ] **Bulan 3:** Retensi (Modul Kasir POS Offline & Sinkronisasi Stok)
 
@@ -34,5 +34,6 @@
 - [x] PROMPT 14: Halaman Checkout & Formulir Data Pengiriman Pembeli (Selesai)
 - [x] PROMPT 15: Integrasi Pemesanan ke WhatsApp Penjual via Tautan Resmi `wa.me` (Selesai)
 
-### Tahap 5: Pengujian Akhir & Kesiapan Produksi
-- [ ] PROMPT 16: Audit Kinerja Mobile (Target < 2 detik di 4G), End-to-End Testing, & Checklist Rilis MVP
+### Tahap 5: Penyempurnaan, Pengujian & Rilis
+- [x] PROMPT 16: Penyempurnaan UI/UX Responsif Seluruh Halaman MVP & Loading/Empty/Error States (Selesai)
+- [ ] PROMPT 17: Audit Kinerja Mobile (Target < 2 detik di 4G), End-to-End QA, & Checklist Rilis Produksi

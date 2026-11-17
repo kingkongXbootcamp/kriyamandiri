@@ -1,6 +1,18 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import {
+  Search,
+  X,
+  MapPin,
+  ShoppingBag,
+  ChevronRight,
+  Plus,
+  Minus,
+  AlertCircle,
+  ImageOff,
+  PackageSearch,
+} from "lucide-react";
 import { PublicStore, PublicProduct } from "@/lib/public-catalog";
 import { CartItem } from "@/types/cart";
 import {
@@ -60,7 +72,7 @@ export default function PublicCatalogClient({
     saveSingleStoreSessionCart(store, cartItems);
   }, [cartItems, store, hydrated]);
 
-  // Pencarian instan berdasarkan nama produk
+  // Pencarian instan berdasarkan nama produk (mendukung multi-kata)
   const filteredProducts = useMemo(() => {
     const normalizedQuery = searchQuery.toLowerCase().trim();
     if (!normalizedQuery) return products;
@@ -150,13 +162,11 @@ export default function PublicCatalogClient({
     setIsCartOpen(false);
   };
 
-  // Hitung ringkasan subtotal & total harga
   const cartSummary = useMemo(
     () => calculateCartSummary(cartItems),
     [cartItems]
   );
 
-  // Map kuantitas cepat per productId untuk rendering kartu produk
   const quantityMap = useMemo(() => {
     return new Map(cartItems.map((item) => [item.productId, item.quantity]));
   }, [cartItems]);
@@ -164,25 +174,12 @@ export default function PublicCatalogClient({
   const hasActiveSearch = searchQuery.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* 1. Sticky Header Pencarian Produk */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-3.5 py-2.5">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      {/* 1. Sticky Header Kolom Pencarian Produk */}
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-3xl px-4 py-2.5 sm:px-6">
           <div className="relative flex items-center">
-            <svg
-              className="w-4 h-4 text-gray-400 absolute left-3.5 pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-
+            <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400" />
             <input
               ref={searchInputRef}
               type="text"
@@ -193,53 +190,43 @@ export default function PublicCatalogClient({
               spellCheck={false}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={`Cari nama produk di ${store.name}...`}
+              placeholder={`Cari produk di ${store.name}...`}
               aria-label="Cari nama produk"
-              className="w-full h-11 pl-10 pr-10 bg-gray-100 focus:bg-white border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-500 outline-none transition"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-100/80 pl-10 pr-11 text-base text-slate-900 placeholder-slate-400 transition focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 sm:text-sm"
             />
-
             {searchQuery.length > 0 && (
               <button
                 type="button"
                 onClick={handleClearSearch}
                 aria-label="Hapus pencarian"
-                className="absolute right-1.5 w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-200/70 active:bg-gray-200 transition"
+                className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-200/70 hover:text-slate-800"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Kontainer Utama Mobile-First */}
-      <main className="flex-1 w-full max-w-lg mx-auto px-3.5 pt-4 pb-28 space-y-4">
+      {/* Kontainer Utama Responsif (Mobile-First & Desktop-Friendly) */}
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 pt-4 pb-28 sm:space-y-5 sm:px-6">
         {/* Notifikasi Sesi / Validasi Stok */}
         {cartNotice && (
           <div
             role="alert"
-            className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3 text-xs flex items-start justify-between gap-2.5 shadow-xs"
+            className="flex items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-950 shadow-xs"
           >
-            <p className="leading-relaxed">{cartNotice}</p>
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <p className="leading-relaxed">{cartNotice}</p>
+            </div>
             <button
               type="button"
               onClick={() => setCartNotice(null)}
               aria-label="Tutup pemberitahuan"
-              className="text-amber-700 hover:text-amber-900 font-bold shrink-0 px-1"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-amber-700 hover:bg-amber-100 hover:text-amber-950"
             >
-              ×
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -247,15 +234,15 @@ export default function PublicCatalogClient({
         {/* 2. Identitas & Profil Toko */}
         <section
           aria-label="Profil Toko"
-          className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm"
+          className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
         >
-          <div className="flex items-start gap-3.5">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-extrabold text-2xl shrink-0 overflow-hidden">
+          <div className="flex items-start gap-3.5 sm:gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 text-xl font-extrabold text-emerald-700 sm:h-20 sm:w-20">
               {store.logo_url ? (
                 <img
                   src={store.logo_url}
                   alt={`Logo ${store.name}`}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 store.name.charAt(0).toUpperCase()
@@ -263,35 +250,15 @@ export default function PublicCatalogClient({
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg font-extrabold text-gray-900 leading-snug">
+              <h1 className="text-lg font-extrabold leading-snug text-slate-900 sm:text-xl">
                 {store.name}
               </h1>
-
-              <p className="text-xs font-medium text-gray-500 mt-0.5 flex items-center gap-1">
-                <svg
-                  className="w-3.5 h-3.5 text-emerald-600 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
+              <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-slate-500 sm:text-sm">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                 <span>{store.city}</span>
               </p>
-
               {store.description && (
-                <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                <p className="mt-2 text-xs leading-relaxed text-slate-600 sm:text-sm">
                   {store.description}
                 </p>
               )}
@@ -304,58 +271,69 @@ export default function PublicCatalogClient({
           aria-live="polite"
           className="flex items-center justify-between gap-2 px-0.5"
         >
-          <h2 className="text-sm font-bold text-gray-900">
+          <h2 className="text-sm font-extrabold text-slate-900 sm:text-base">
             {hasActiveSearch
               ? `Hasil Pencarian (${filteredProducts.length})`
               : `Katalog Produk (${products.length})`}
           </h2>
-
           {hasActiveSearch && (
             <button
               type="button"
               onClick={handleClearSearch}
-              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg transition"
+              className="min-h-[34px] rounded-xl bg-emerald-50 px-3 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
             >
               Hapus Pencarian
             </button>
           )}
         </div>
 
-        {/* 4. Grid Daftar Produk 2 Kolom */}
+        {/* 4. Grid Daftar Produk (2 Kolom Mobile, 3 Kolom Desktop) */}
         {products.length === 0 ? (
-          <section className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-            <p className="text-sm font-bold text-gray-800">
+          <section className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-10">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <ShoppingBag className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 text-sm font-bold text-slate-900 sm:text-base">
               Belum ada produk tersedia
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Toko ini belum menampilkan produk di katalog online.
+            </h3>
+            <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-slate-500">
+              Toko ini belum menampilkan produk di katalog online. Silakan cek
+              kembali nanti.
             </p>
           </section>
         ) : filteredProducts.length === 0 ? (
           <section
             role="status"
-            className="bg-white rounded-2xl border border-gray-200 p-7 text-center shadow-sm space-y-3"
+            className="space-y-3 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm"
           >
-            <p className="text-sm font-bold text-gray-900">
-              Produk tidak ditemukan
-            </p>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Tidak ada produk dengan nama{" "}
-              <span className="font-semibold text-gray-700">
-                &ldquo;{searchQuery.trim()}&rdquo;
-              </span>{" "}
-              di toko ini.
-            </p>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+              <PackageSearch className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 sm:text-base">
+                Produk tidak ditemukan
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                Tidak ada produk dengan kata kunci{" "}
+                <span className="font-semibold text-slate-700">
+                  &ldquo;{searchQuery.trim()}&rdquo;
+                </span>{" "}
+                di toko ini.
+              </p>
+            </div>
             <button
               type="button"
               onClick={handleClearSearch}
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
             >
               Hapus Pencarian
             </button>
           </section>
         ) : (
-          <section aria-label="Daftar Produk" className="grid grid-cols-2 gap-3">
+          <section
+            aria-label="Daftar Produk"
+            className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3"
+          >
             {filteredProducts.map((product, index) => {
               const qtyInCart = quantityMap.get(product.id) || 0;
               const isOutOfStock = !product.is_available;
@@ -363,30 +341,32 @@ export default function PublicCatalogClient({
               return (
                 <article
                   key={product.id}
-                  className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm flex flex-col"
+                  className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
                 >
                   {/* Foto Produk Rasio 1:1 */}
-                  <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
+                  <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        loading={index < 4 ? "eager" : "lazy"}
+                        loading={index < 6 ? "eager" : "lazy"}
                         decoding="async"
-                        className={`w-full h-full object-cover ${
+                        className={`h-full w-full object-cover transition-transform duration-300 ${
                           isOutOfStock ? "opacity-50 grayscale" : ""
                         }`}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                        Foto Belum Tersedia
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-xs text-slate-400">
+                        <ImageOff className="h-5 w-5" />
+                        <span className="text-[11px]">Tanpa Foto</span>
                       </div>
                     )}
 
+                    {/* Badge Status Ketersediaan */}
                     <span
-                      className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${
+                      className={`absolute top-2 left-2 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-xs ${
                         isOutOfStock
-                          ? "bg-gray-900/85 text-white"
+                          ? "bg-slate-900/85 text-white"
                           : "bg-emerald-600/95 text-white"
                       }`}
                     >
@@ -395,34 +375,33 @@ export default function PublicCatalogClient({
                   </div>
 
                   {/* Detail & Tombol Tambah Satu Klik */}
-                  <div className="p-3 flex-1 flex flex-col justify-between gap-2.5">
+                  <div className="flex flex-1 flex-col justify-between gap-3 p-3 sm:p-3.5">
                     <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 leading-snug">
+                      <h3 className="line-clamp-2 text-xs font-bold leading-snug text-slate-900 sm:text-sm">
                         {product.name}
                       </h3>
-
                       {product.description && (
-                        <p className="text-[11px] text-gray-500 line-clamp-2 mt-1 leading-normal">
+                        <p className="mt-1 line-clamp-2 text-[11px] leading-normal text-slate-500">
                           {product.description}
                         </p>
                       )}
-
                       <p
-                        className={`text-sm font-extrabold mt-1.5 ${
-                          isOutOfStock ? "text-gray-400" : "text-emerald-700"
+                        className={`mt-1.5 text-sm font-extrabold sm:text-base ${
+                          isOutOfStock ? "text-slate-400" : "text-emerald-700"
                         }`}
                       >
                         {formatRupiah(product.price)}
                       </p>
                     </div>
 
+                    {/* Area Sentuh Minimal 44px */}
                     <div>
                       {isOutOfStock ? (
                         <button
                           type="button"
                           disabled
                           aria-disabled="true"
-                          className="w-full py-2 px-2.5 bg-gray-100 border border-gray-200 text-gray-400 text-xs font-bold rounded-xl cursor-not-allowed"
+                          className="min-h-[44px] w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-3 text-xs font-bold text-slate-400"
                         >
                           Stok Habis
                         </button>
@@ -430,30 +409,31 @@ export default function PublicCatalogClient({
                         <button
                           type="button"
                           onClick={() => handleAddOneItem(product)}
-                          className="w-full py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1"
+                          className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-[0.98]"
                         >
-                          <span>+ Keranjang</span>
+                          <Plus className="h-4 w-4" />
+                          <span>Keranjang</span>
                         </button>
                       ) : (
-                        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl p-1">
+                        <div className="flex min-h-[44px] items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-1">
                           <button
                             type="button"
                             onClick={() => handleDecreaseQty(product.id)}
                             aria-label={`Kurangi jumlah ${product.name}`}
-                            className="w-7 h-7 rounded-lg bg-white text-emerald-800 font-extrabold text-sm shadow-xs hover:bg-emerald-100 transition flex items-center justify-center"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-emerald-800 shadow-xs transition hover:bg-emerald-100 active:scale-95"
                           >
-                            −
+                            <Minus className="h-4 w-4" />
                           </button>
-                          <span className="text-xs font-extrabold text-emerald-900">
+                          <span className="text-xs font-extrabold text-emerald-950 sm:text-sm">
                             {qtyInCart}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleAddOneItem(product)}
                             aria-label={`Tambah jumlah ${product.name}`}
-                            className="w-7 h-7 rounded-lg bg-emerald-600 text-white font-extrabold text-sm shadow-xs hover:bg-emerald-700 transition flex items-center justify-center"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs transition hover:bg-emerald-700 active:scale-95"
                           >
-                            +
+                            <Plus className="h-4 w-4" />
                           </button>
                         </div>
                       )}
@@ -465,78 +445,53 @@ export default function PublicCatalogClient({
           </section>
         )}
 
-        {/* Footer */}
+        {/* Footer Branding Ringkas */}
         <footer className="pt-4 text-center">
-          <p className="text-[11px] text-gray-400">
-            Katalog online oleh{" "}
-            <span className="font-bold text-gray-600">KRIYAMANDIRI</span>
+          <p className="text-[11px] text-slate-400">
+            Katalog digital oleh{" "}
+            <span className="font-bold text-slate-600">KRIYAMANDIRI</span>
           </p>
         </footer>
       </main>
 
-      {/* 5. Sticky Floating Bar Ringkasan Keranjang di Bagian Bawah Layar HP */}
+      {/* 5. Sticky Floating Bar Ringkasan Keranjang di Bagian Bawah Layar */}
       {hydrated && cartSummary.totalItems > 0 && (
         <div
           role="region"
           aria-label="Ringkasan Keranjang"
-          className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-gradient-to-t from-white via-white to-transparent pointer-events-none"
+          className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-white via-white/95 to-transparent p-3 sm:p-4"
         >
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className="w-full max-w-lg mx-auto pointer-events-auto bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white rounded-2xl px-4 py-3 shadow-lg flex items-center justify-between transition"
+            className="pointer-events-auto mx-auto flex min-h-[56px] w-full max-w-3xl items-center justify-between rounded-2xl bg-emerald-700 px-4 py-2.5 text-white shadow-lg transition hover:bg-emerald-800 active:scale-[0.99]"
           >
             <div className="flex items-center gap-3 text-left">
-              <div className="relative w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-amber-400 text-gray-900 text-[11px] font-extrabold flex items-center justify-center">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600">
+                <ShoppingBag className="h-5 w-5 text-white" />
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-400 px-1 text-[11px] font-extrabold text-slate-950 shadow-xs">
                   {cartSummary.totalItems}
                 </span>
               </div>
-
               <div>
                 <p className="text-[11px] font-medium text-emerald-100">
-                  {cartSummary.totalItems} Barang • Total Harga
+                  {cartSummary.totalItems} Barang &bull; Total Harga
                 </p>
-                <p className="text-sm font-extrabold tracking-tight">
+                <p className="text-sm font-extrabold tracking-tight sm:text-base">
                   {formatRupiah(cartSummary.totalAmount)}
                 </p>
               </div>
             </div>
 
-            <span className="inline-flex items-center gap-1 text-xs font-bold bg-white text-emerald-800 px-3 py-2 rounded-xl shadow-xs shrink-0">
+            <span className="inline-flex min-h-[38px] items-center gap-1 rounded-xl bg-white px-3.5 text-xs font-extrabold text-emerald-800 shadow-xs">
               <span>Lihat Keranjang</span>
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              <ChevronRight className="h-4 w-4" />
             </span>
           </button>
         </div>
       )}
 
-      {/* 6. Slide-Up Drawer Rincian Keranjang */}
+      {/* 6. Slide-Up Drawer / Modal Rincian Keranjang */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}

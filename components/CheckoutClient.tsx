@@ -2,6 +2,15 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import {
+  ArrowLeft,
+  Info,
+  AlertCircle,
+  MessageCircle,
+  ShoppingBag,
+  ImageOff,
+  Loader2,
+} from "lucide-react";
 import { PublicProduct, PublicStore } from "@/lib/public-catalog";
 import { CartItem } from "@/types/cart";
 import {
@@ -220,7 +229,7 @@ export default function CheckoutClient({
       setGeneratedMessagePreview(generatedOrder.messageText);
       setSubmitting(false);
 
-      // 5. Buka aplikasi WhatsApp penjual secara langsung (ramah mobile & bebas blokir popup)
+      // 5. Buka aplikasi WhatsApp penjual secara langsung
       window.location.assign(generatedOrder.whatsappUrl);
     } catch (err: unknown) {
       const message =
@@ -232,13 +241,13 @@ export default function CheckoutClient({
     }
   };
 
-  // Tampilan saat hidrasi awal
+  // Loading state saat hidrasi keranjang & profil lokal
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center space-y-2">
-          <div className="w-7 h-7 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-medium text-gray-500">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+        <div className="space-y-2.5 text-center">
+          <Loader2 className="mx-auto h-7 w-7 animate-spin text-emerald-600" />
+          <p className="text-xs font-semibold text-slate-500">
             Memuat ringkasan pesanan...
           </p>
         </div>
@@ -249,57 +258,33 @@ export default function CheckoutClient({
   // Tampilan setelah pesanan berhasil diteruskan ke WhatsApp penjual
   if (verifiedDraft && whatsappOrderUrl) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
-          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+      <div className="flex min-h-screen flex-col bg-slate-50">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+          <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6">
             <Link
               href={`/${store.slug}`}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-700 transition"
+              className="inline-flex min-h-[40px] items-center gap-1.5 text-xs font-bold text-slate-700 transition hover:text-emerald-700"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
+              <ArrowLeft className="h-4 w-4" />
               <span>Kembali ke Katalog</span>
             </Link>
-            <span className="text-xs font-extrabold text-emerald-700 truncate max-w-[170px]">
+            <span className="max-w-[180px] truncate text-xs font-extrabold text-emerald-700">
               {store.name}
             </span>
           </div>
         </header>
 
-        <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-5 pb-12 space-y-4">
-          <section className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-4">
+        <main className="mx-auto w-full max-w-lg flex-1 space-y-4 px-4 pt-6 pb-12">
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <MessageCircle className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-base font-extrabold text-gray-900">
+                <h1 className="text-base font-extrabold text-slate-900 sm:text-lg">
                   Pesanan Siap Dikirim via WhatsApp
                 </h1>
-                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                <p className="mt-1 text-xs leading-relaxed text-slate-600">
                   Jika aplikasi WhatsApp tidak terbuka otomatis, tekan tombol
                   hijau di bawah ini lalu tekan tombol{" "}
                   <strong>Kirim (Send)</strong> di WhatsApp.
@@ -308,11 +293,12 @@ export default function CheckoutClient({
             </div>
 
             {/* Peringatan Status Pesanan yang Jujur */}
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs leading-relaxed text-amber-950">
               <strong>Penting:</strong> Pesanan ini{" "}
               <strong>belum dibayar dan belum diterima penjual</strong> sebelum
               Anda mengirimkan pesan di WhatsApp serta menerima balasan total
-              ongkir dan nomor rekening dari <strong>{verifiedDraft.storeName}</strong>.
+              ongkir dan nomor rekening dari{" "}
+              <strong>{verifiedDraft.storeName}</strong>.
             </div>
 
             {/* Tombol Cadangan Buka WhatsApp */}
@@ -320,18 +306,19 @@ export default function CheckoutClient({
               href={whatsappOrderUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#1EBE5D] active:scale-[0.99] text-white text-sm font-extrabold rounded-xl shadow-sm transition"
+              className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#1EBE5D] active:scale-[0.99]"
             >
+              <MessageCircle className="h-5 w-5" />
               <span>Buka WhatsApp Penjual Sekarang</span>
             </a>
 
             {/* Pratinjau Teks Pesan yang Dihasilkan */}
             {generatedMessagePreview && (
               <div className="space-y-1.5 pt-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Pratinjau Format Pesan WhatsApp
                 </p>
-                <pre className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-[11px] text-gray-800 whitespace-pre-wrap font-sans leading-relaxed">
+                <pre className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3.5 font-sans text-xs leading-relaxed text-slate-800">
                   {generatedMessagePreview}
                 </pre>
               </div>
@@ -340,7 +327,7 @@ export default function CheckoutClient({
             <div className="pt-1">
               <Link
                 href={`/${store.slug}`}
-                className="flex items-center justify-center w-full py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold rounded-xl transition"
+                className="flex min-h-[44px] w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
               >
                 Kembali ke Katalog Toko
               </Link>
@@ -351,51 +338,42 @@ export default function CheckoutClient({
     );
   }
 
-  // Tampilan jika keranjang kosong
+  // Empty state jika keranjang kosong
   if (cartSummary.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-200">
-          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+      <div className="flex min-h-screen flex-col bg-slate-50">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+          <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6">
             <Link
               href={`/${store.slug}`}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-700 transition"
+              className="inline-flex min-h-[40px] items-center gap-1.5 text-xs font-bold text-slate-700 transition hover:text-emerald-700"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
+              <ArrowLeft className="h-4 w-4" />
               <span>Kembali ke Katalog</span>
             </Link>
-            <span className="text-xs font-bold text-gray-500 truncate max-w-[160px]">
+            <span className="max-w-[180px] truncate text-xs font-bold text-slate-500">
               {store.name}
             </span>
           </div>
         </header>
 
-        <main className="flex-1 max-w-lg w-full mx-auto p-4 flex items-center justify-center">
-          <div className="w-full bg-white rounded-2xl border border-gray-200 p-6 text-center shadow-sm space-y-3">
-            <h1 className="text-base font-extrabold text-gray-900">
+        <main className="mx-auto flex w-full max-w-md flex-1 items-center justify-center p-4">
+          <div className="w-full space-y-3 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+              <ShoppingBag className="h-6 w-6" />
+            </div>
+            <h1 className="text-base font-extrabold text-slate-900">
               Keranjang Belanja Kosong
             </h1>
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <p className="text-xs leading-relaxed text-slate-500">
               Pilih minimal satu produk dari katalog{" "}
-              <strong className="text-gray-700">{store.name}</strong> sebelum
+              <strong className="text-slate-700">{store.name}</strong> sebelum
               mengisi data pengiriman.
             </p>
             <div className="pt-2">
               <Link
                 href={`/${store.slug}`}
-                className="inline-flex items-center justify-center px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
               >
                 Kembali ke Katalog
               </Link>
@@ -407,42 +385,30 @@ export default function CheckoutClient({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       {/* Header Navigasi Atas dengan Tombol Kembali ke Katalog */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-2 px-4 sm:px-6">
           <Link
             href={`/${store.slug}`}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-emerald-700 py-1.5 transition"
+            className="inline-flex min-h-[40px] items-center gap-1.5 text-xs font-bold text-slate-700 transition hover:text-emerald-700"
           >
-            <svg
-              className="w-4 h-4 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
+            <ArrowLeft className="h-4 w-4 shrink-0" />
             <span>Kembali ke Katalog</span>
           </Link>
-          <span className="text-xs font-extrabold text-emerald-700 truncate max-w-[170px]">
+          <span className="max-w-[180px] truncate text-xs font-extrabold text-emerald-700 sm:text-sm">
             {store.name}
           </span>
         </div>
       </header>
 
-      {/* Konten Utama Mobile-First */}
-      <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-4 pb-12 space-y-4">
+      {/* Konten Utama Responsif (1 Kolom Mobile, 2 Kolom Desktop) */}
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 pt-5 pb-12 sm:px-6">
         <div>
-          <h1 className="text-lg font-extrabold text-gray-900">
+          <h1 className="text-lg font-extrabold text-slate-900 sm:text-xl">
             Checkout & Data Pengiriman
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
             Periksa rincian pesanan dan lengkapi alamat pengiriman Anda.
           </p>
         </div>
@@ -450,355 +416,355 @@ export default function CheckoutClient({
         {stockNotice && (
           <div
             role="alert"
-            className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3 text-xs leading-relaxed"
+            className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs leading-relaxed text-amber-950"
           >
-            {stockNotice}
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <span>{stockNotice}</span>
           </div>
         )}
 
-        {/* ================= BAGIAN 1: RINGKASAN PESANAN ================= */}
-        <section
-          aria-label="Ringkasan Pesanan"
-          className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-3"
-        >
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
-            <h2 className="text-sm font-extrabold text-gray-900">
-              Ringkasan Pesanan
-            </h2>
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-              {cartSummary.totalItems} Barang
-            </span>
-          </div>
-
-          {/* Daftar Barang */}
-          <ul className="divide-y divide-gray-100">
-            {cartSummary.items.map((item) => (
-              <li
-                key={item.productId}
-                className="py-2.5 first:pt-0 last:pb-0 flex items-start justify-between gap-3"
-              >
-                <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                  <div className="w-11 h-11 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
-                    {item.image_url ? (
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-400 text-center px-1">
-                        Produk
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">
-                      {item.name}
-                    </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      {item.quantity} &times; {formatRupiah(item.price)}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-extrabold text-gray-900 shrink-0">
-                  {formatRupiah(item.subtotal)}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Ringkasan Jumlah & Total Harga Barang */}
-          <div className="pt-3 border-t border-gray-200 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-gray-600">
-              <span>Ringkasan Jumlah</span>
-              <span className="font-bold text-gray-900">
-                {cartSummary.totalItems} barang ({cartSummary.items.length} jenis produk)
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm pt-1">
-              <span className="font-bold text-gray-900">Total Harga Barang</span>
-              <span className="text-base font-extrabold text-emerald-700">
-                {formatRupiah(cartSummary.totalAmount)}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-12 md:items-start md:gap-5">
+          {/* ================= BAGIAN 1: RINGKASAN PESANAN ================= */}
+          <section
+            aria-label="Ringkasan Pesanan"
+            className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:sticky md:top-20 md:order-2 md:col-span-5"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h2 className="text-sm font-extrabold text-slate-900">
+                Ringkasan Pesanan
+              </h2>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                {cartSummary.totalItems} Barang
               </span>
             </div>
 
-            {/* Keterangan Ongkir Belum Termasuk */}
-            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-900 leading-relaxed flex items-start gap-2">
-              <svg
-                className="w-4 h-4 text-blue-600 shrink-0 mt-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>
-                <strong>Belum termasuk ongkos kirim.</strong> Total ongkir dan
-                konfirmasi pembayaran akan diinformasikan oleh penjual melalui
-                WhatsApp.
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* ================= BAGIAN 2: FORMULIR DATA PENGIRIMAN ================= */}
-        <section
-          aria-label="Formulir Data Pengiriman"
-          className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm"
-        >
-          <div className="flex items-center justify-between gap-2 mb-3.5">
-            <h2 className="text-sm font-extrabold text-gray-900">
-              Data Penerima & Alamat Pengiriman
-            </h2>
-            {hasStoredProfile && (
-              <button
-                type="button"
-                onClick={handleForgetSavedData}
-                className="text-[11px] font-semibold text-rose-600 hover:underline shrink-0"
-              >
-                Hapus data tersimpan
-              </button>
-            )}
-          </div>
-
-          {submitError && (
-            <div
-              role="alert"
-              className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium leading-relaxed"
-            >
-              {submitError}
-            </div>
-          )}
-
-          <form onSubmit={handleSendToWhatsApp} noValidate className="space-y-3.5">
-            {/* 1. Nama Lengkap */}
-            <div>
-              <label
-                htmlFor="buyer-fullname"
-                className="block text-xs font-bold text-gray-700 mb-1"
-              >
-                Nama Lengkap <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="buyer-fullname"
-                type="text"
-                autoComplete="name"
-                maxLength={100}
-                value={formData.fullName}
-                onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                placeholder="Contoh: Budi Santoso"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
-                  fieldErrors.fullName
-                    ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                    : "border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
-              {fieldErrors.fullName && (
-                <p className="text-[11px] font-medium text-rose-600 mt-1">
-                  {fieldErrors.fullName}
-                </p>
-              )}
-            </div>
-
-            {/* 2. Nomor WhatsApp */}
-            <div>
-              <label
-                htmlFor="buyer-whatsapp"
-                className="block text-xs font-bold text-gray-700 mb-1"
-              >
-                Nomor WhatsApp Aktif <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="buyer-whatsapp"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={20}
-                value={formData.whatsappNumber}
-                onChange={(e) =>
-                  handleFieldChange("whatsappNumber", e.target.value)
-                }
-                placeholder="Contoh: 081234567890"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
-                  fieldErrors.whatsappNumber
-                    ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                    : "border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
-              {fieldErrors.whatsappNumber && (
-                <p className="text-[11px] font-medium text-rose-600 mt-1">
-                  {fieldErrors.whatsappNumber}
-                </p>
-              )}
-            </div>
-
-            {/* 3. Alamat Lengkap */}
-            <div>
-              <label
-                htmlFor="buyer-address"
-                className="block text-xs font-bold text-gray-700 mb-1"
-              >
-                Alamat Lengkap <span className="text-rose-600">*</span>
-              </label>
-              <textarea
-                id="buyer-address"
-                rows={3}
-                autoComplete="street-address"
-                maxLength={300}
-                value={formData.fullAddress}
-                onChange={(e) => handleFieldChange("fullAddress", e.target.value)}
-                placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan/desa, atau patokan lokasi"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
-                  fieldErrors.fullAddress
-                    ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                    : "border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
-              {fieldErrors.fullAddress && (
-                <p className="text-[11px] font-medium text-rose-600 mt-1">
-                  {fieldErrors.fullAddress}
-                </p>
-              )}
-            </div>
-
-            {/* 4. Kecamatan */}
-            <div>
-              <label
-                htmlFor="buyer-district"
-                className="block text-xs font-bold text-gray-700 mb-1"
-              >
-                Kecamatan <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="buyer-district"
-                type="text"
-                maxLength={100}
-                value={formData.district}
-                onChange={(e) => handleFieldChange("district", e.target.value)}
-                placeholder="Contoh: Beji"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
-                  fieldErrors.district
-                    ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                    : "border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
-              {fieldErrors.district && (
-                <p className="text-[11px] font-medium text-rose-600 mt-1">
-                  {fieldErrors.district}
-                </p>
-              )}
-            </div>
-
-            {/* 5. Kota atau Kabupaten */}
-            <div>
-              <label
-                htmlFor="buyer-city"
-                className="block text-xs font-bold text-gray-700 mb-1"
-              >
-                Kota / Kabupaten <span className="text-rose-600">*</span>
-              </label>
-              <input
-                id="buyer-city"
-                type="text"
-                autoComplete="address-level2"
-                maxLength={100}
-                value={formData.city}
-                onChange={(e) => handleFieldChange("city", e.target.value)}
-                placeholder="Contoh: Kota Depok"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
-                  fieldErrors.city
-                    ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                    : "border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
-              {fieldErrors.city && (
-                <p className="text-[11px] font-medium text-rose-600 mt-1">
-                  {fieldErrors.city}
-                </p>
-              )}
-            </div>
-
-            {/* 6. Provinsi (Opsional) */}
-            <div>
-              <label
-                htmlFor="buyer-province"
-                className="block text-xs font-bold text-gray-700 mb-1"
-              >
-                Provinsi <span className="text-gray-400 font-normal">(Opsional)</span>
-              </label>
-              <input
-                id="buyer-province"
-                type="text"
-                autoComplete="address-level1"
-                maxLength={100}
-                value={formData.province}
-                onChange={(e) => handleFieldChange("province", e.target.value)}
-                placeholder="Contoh: Jawa Barat"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
-                  fieldErrors.province
-                    ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
-                    : "border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
-              {fieldErrors.province && (
-                <p className="text-[11px] font-medium text-rose-600 mt-1">
-                  {fieldErrors.province}
-                </p>
-              )}
-            </div>
-
-            {/* Kotak Persetujuan Penyimpanan Data Pembeli di Browser (Opt-In) */}
-            <div className="p-3 rounded-xl bg-gray-50 border border-gray-200">
-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberBuyerData}
-                  onChange={(e) => handleToggleConsent(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                />
-                <span className="text-xs text-gray-700 leading-relaxed">
-                  <strong>Simpan data pengiriman di browser ini</strong> agar
-                  otomatis terisi saat saya berbelanja lagi. Data hanya disimpan
-                  di perangkat Anda.
-                </span>
-              </label>
-            </div>
-
-            {/* Tombol Kirim Pesanan ke WhatsApp Penjual & Kembali ke Katalog */}
-            <div className="pt-2 space-y-2.5">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#1EBE5D] active:scale-[0.99] disabled:opacity-50 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5 shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
+            <ul className="divide-y divide-slate-100">
+              {cartSummary.items.map((item) => (
+                <li
+                  key={item.productId}
+                  className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
                 >
-                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z" />
-                </svg>
-                <span>
-                  {submitting
-                    ? "Memverifikasi Pesanan..."
-                    : "KIRIM PESANAN KE WHATSAPP PENJUAL"}
-                </span>
-              </button>
+                  <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-slate-400">
+                          <ImageOff className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-xs font-bold leading-snug text-slate-900">
+                        {item.name}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-slate-500">
+                        {item.quantity} &times; {formatRupiah(item.price)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-xs font-extrabold text-slate-900">
+                    {formatRupiah(item.subtotal)}
+                  </span>
+                </li>
+              ))}
+            </ul>
 
-              <Link
-                href={`/${store.slug}`}
-                className="flex items-center justify-center w-full py-3 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold rounded-xl transition"
-              >
-                Kembali ke Katalog
-              </Link>
+            <div className="space-y-2 border-t border-slate-200 pt-3 text-xs">
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Ringkasan Jumlah</span>
+                <span className="font-bold text-slate-900">
+                  {cartSummary.totalItems} barang ({cartSummary.items.length}{" "}
+                  jenis)
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1 text-sm">
+                <span className="font-bold text-slate-900">
+                  Total Harga Barang
+                </span>
+                <span className="text-base font-extrabold text-emerald-700">
+                  {formatRupiah(cartSummary.totalAmount)}
+                </span>
+              </div>
+
+              {/* Keterangan Ongkir Belum Termasuk */}
+              <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 p-2.5 text-[11px] leading-relaxed text-blue-950">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+                <span>
+                  <strong>Belum termasuk ongkos kirim.</strong> Total ongkir dan
+                  konfirmasi pembayaran akan diinformasikan oleh penjual melalui
+                  WhatsApp.
+                </span>
+              </div>
             </div>
-          </form>
-        </section>
+          </section>
+
+          {/* ================= BAGIAN 2: FORMULIR DATA PENGIRIMAN ================= */}
+          <section
+            aria-label="Formulir Data Pengiriman"
+            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 md:order-1 md:col-span-7"
+          >
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-extrabold text-slate-900 sm:text-base">
+                Data Penerima & Alamat Pengiriman
+              </h2>
+              {hasStoredProfile && (
+                <button
+                  type="button"
+                  onClick={handleForgetSavedData}
+                  className="min-h-[32px] shrink-0 text-[11px] font-bold text-rose-600 hover:underline"
+                >
+                  Hapus data tersimpan
+                </button>
+              )}
+            </div>
+
+            {submitError && (
+              <div
+                role="alert"
+                className="mb-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium leading-relaxed text-rose-700"
+              >
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
+            <form
+              onSubmit={handleSendToWhatsApp}
+              noValidate
+              className="space-y-3.5"
+            >
+              {/* 1. Nama Lengkap */}
+              <div>
+                <label
+                  htmlFor="buyer-fullname"
+                  className="mb-1 block text-xs font-bold text-slate-700"
+                >
+                  Nama Lengkap <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  id="buyer-fullname"
+                  type="text"
+                  autoComplete="name"
+                  maxLength={100}
+                  value={formData.fullName}
+                  onChange={(e) => handleFieldChange("fullName", e.target.value)}
+                  placeholder="Contoh: Budi Santoso"
+                  className={`h-11 w-full rounded-xl border px-3.5 text-base text-slate-900 outline-none transition sm:text-sm ${
+                    fieldErrors.fullName
+                      ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                      : "border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                  }`}
+                />
+                {fieldErrors.fullName && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">
+                    {fieldErrors.fullName}
+                  </p>
+                )}
+              </div>
+
+              {/* 2. Nomor WhatsApp */}
+              <div>
+                <label
+                  htmlFor="buyer-whatsapp"
+                  className="mb-1 block text-xs font-bold text-slate-700"
+                >
+                  Nomor WhatsApp Aktif <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  id="buyer-whatsapp"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={20}
+                  value={formData.whatsappNumber}
+                  onChange={(e) =>
+                    handleFieldChange("whatsappNumber", e.target.value)
+                  }
+                  placeholder="Contoh: 081234567890"
+                  className={`h-11 w-full rounded-xl border px-3.5 text-base text-slate-900 outline-none transition sm:text-sm ${
+                    fieldErrors.whatsappNumber
+                      ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                      : "border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                  }`}
+                />
+                {fieldErrors.whatsappNumber && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">
+                    {fieldErrors.whatsappNumber}
+                  </p>
+                )}
+              </div>
+
+              {/* 3. Alamat Lengkap */}
+              <div>
+                <label
+                  htmlFor="buyer-address"
+                  className="mb-1 block text-xs font-bold text-slate-700"
+                >
+                  Alamat Lengkap <span className="text-rose-600">*</span>
+                </label>
+                <textarea
+                  id="buyer-address"
+                  rows={3}
+                  autoComplete="street-address"
+                  maxLength={300}
+                  value={formData.fullAddress}
+                  onChange={(e) =>
+                    handleFieldChange("fullAddress", e.target.value)
+                  }
+                  placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan/desa, atau patokan lokasi"
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-base text-slate-900 outline-none transition sm:text-sm ${
+                    fieldErrors.fullAddress
+                      ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                      : "border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                  }`}
+                />
+                {fieldErrors.fullAddress && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">
+                    {fieldErrors.fullAddress}
+                  </p>
+                )}
+              </div>
+
+              {/* 4. Kecamatan & 5. Kota / Kabupaten */}
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="buyer-district"
+                    className="mb-1 block text-xs font-bold text-slate-700"
+                  >
+                    Kecamatan <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    id="buyer-district"
+                    type="text"
+                    maxLength={100}
+                    value={formData.district}
+                    onChange={(e) => handleFieldChange("district", e.target.value)}
+                    placeholder="Contoh: Beji"
+                    className={`h-11 w-full rounded-xl border px-3.5 text-base text-slate-900 outline-none transition sm:text-sm ${
+                      fieldErrors.district
+                        ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                        : "border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                    }`}
+                  />
+                  {fieldErrors.district && (
+                    <p className="mt-1 text-[11px] font-medium text-rose-600">
+                      {fieldErrors.district}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="buyer-city"
+                    className="mb-1 block text-xs font-bold text-slate-700"
+                  >
+                    Kota / Kabupaten <span className="text-rose-600">*</span>
+                  </label>
+                  <input
+                    id="buyer-city"
+                    type="text"
+                    autoComplete="address-level2"
+                    maxLength={100}
+                    value={formData.city}
+                    onChange={(e) => handleFieldChange("city", e.target.value)}
+                    placeholder="Contoh: Kota Depok"
+                    className={`h-11 w-full rounded-xl border px-3.5 text-base text-slate-900 outline-none transition sm:text-sm ${
+                      fieldErrors.city
+                        ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                        : "border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                    }`}
+                  />
+                  {fieldErrors.city && (
+                    <p className="mt-1 text-[11px] font-medium text-rose-600">
+                      {fieldErrors.city}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* 6. Provinsi (Opsional) */}
+              <div>
+                <label
+                  htmlFor="buyer-province"
+                  className="mb-1 block text-xs font-bold text-slate-700"
+                >
+                  Provinsi{" "}
+                  <span className="font-normal text-slate-400">(Opsional)</span>
+                </label>
+                <input
+                  id="buyer-province"
+                  type="text"
+                  autoComplete="address-level1"
+                  maxLength={100}
+                  value={formData.province}
+                  onChange={(e) => handleFieldChange("province", e.target.value)}
+                  placeholder="Contoh: Jawa Barat"
+                  className={`h-11 w-full rounded-xl border px-3.5 text-base text-slate-900 outline-none transition sm:text-sm ${
+                    fieldErrors.province
+                      ? "border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20"
+                      : "border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20"
+                  }`}
+                />
+                {fieldErrors.province && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">
+                    {fieldErrors.province}
+                  </p>
+                )}
+              </div>
+
+              {/* Kotak Persetujuan Penyimpanan Data Pembeli di Browser (Opt-In) */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+                <label className="flex cursor-pointer select-none items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={rememberBuyerData}
+                    onChange={(e) => handleToggleConsent(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+                  />
+                  <span className="text-xs leading-relaxed text-slate-700">
+                    <strong>Simpan data pengiriman di browser ini</strong> agar
+                    otomatis terisi saat saya berbelanja lagi. Data hanya
+                    disimpan di perangkat Anda.
+                  </span>
+                </label>
+              </div>
+
+              {/* Tombol Kirim Pesanan ke WhatsApp Penjual & Kembali ke Katalog */}
+              <div className="space-y-2.5 pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#1EBE5D] active:scale-[0.99] disabled:opacity-50 sm:text-sm"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Memverifikasi Pesanan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MessageCircle className="h-5 w-5 shrink-0" />
+                      <span>KIRIM PESANAN KE WHATSAPP PENJUAL</span>
+                    </>
+                  )}
+                </button>
+
+                <Link
+                  href={`/${store.slug}`}
+                  className="flex min-h-[44px] w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Kembali ke Katalog
+                </Link>
+              </div>
+            </form>
+          </section>
+        </div>
       </main>
     </div>
   );

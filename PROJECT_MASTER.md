@@ -3,20 +3,20 @@
 ## 1. Ringkasan Proyek
 KRIYAMANDIRI adalah platform web katalog online mobile-first yang dirancang khusus untuk UMKM Indonesia. Memungkinkan penjual mendigitalkan katalog produk dalam hitungan menit dan menerima pesanan terstruktur via WhatsApp (`wa.me`) tanpa biaya server tinggi maupun potongan komisi.
 
-## 2. Prinsip Arsitektur
+## 2. Prinsip Arsitektur & Standar UI/UX
 - **Lean & Modular:** Dibangun bertahap per bulan pengembangan (Bulan 1 Validasi -> Bulan 2 Logistik -> Bulan 3 POS Offline).
 - **Server Cost Efficiency:** Katalog publik bersifat stateless dengan gambar WebP terkompresi di sisi klien (<150 KB) dan checkout langsung via protokol `wa.me`.
-- **Mobile-First UX:** Desain khusus interaksi satu tangan (*thumb-zone*), grid 2 kolom, dan performa tinggi pada jaringan 4G Indonesia.
+- **Mobile-First & Desktop-Adaptive UX:** Area sentuh minimal `44px`, input `16px` anti-zoom di perangkat seluler, tata letak responsif multi-kolom di desktop, serta dukungan lengkap *loading*, *empty*, dan *error states*.
 - **Data Integrity:** Perhitungan total harga, status ketersediaan stok, dan nomor WhatsApp tujuan diverifikasi ulang di sisi server sebelum pesanan diteruskan ke WhatsApp.
 
 ## 3. Tech Stack Terimplementasi
 - **Framework:** Next.js 15 (App Router, TypeScript)
-- **Styling UI:** Tailwind CSS v3 + Lucide React
+- **Styling & Ikon UI:** Tailwind CSS v3 + Lucide React
 - **Database, Auth & Storage:** Supabase (PostgreSQL + Row Level Security + SSR Cookie Auth + Storage Bucket `product-images`)
 - **Client Persistence:** `sessionStorage` (keranjang satu toko per sesi) & `localStorage` opt-in (profil pengiriman pembeli)
 - **Order Channel:** Native WhatsApp Protocol (`https://wa.me/628xxx?text=...` dengan `encodeURIComponent`)
 
-## 4. Struktur Folder Terkini (Tersinkronisasi)
+## 4. Struktur Folder Terkini
 ```text
 kriyamandiri/
 ├── actions/
@@ -31,7 +31,9 @@ kriyamandiri/
 │   │   └── register/page.tsx
 │   ├── (seller)/
 │   │   └── dashboard/
+│   │       ├── error.tsx
 │   │       ├── layout.tsx
+│   │       ├── loading.tsx
 │   │       ├── page.tsx
 │   │       ├── profile/page.tsx
 │   │       └── products/
@@ -39,9 +41,12 @@ kriyamandiri/
 │   │           ├── new/page.tsx
 │   │           └── [id]/edit/page.tsx
 │   ├── [slug]/
+│   │   ├── loading.tsx
 │   │   ├── page.tsx
 │   │   ├── not-found.tsx
-│   │   └── checkout/page.tsx
+│   │   └── checkout/
+│   │       ├── loading.tsx
+│   │       └── page.tsx
 │   ├── globals.css
 │   ├── layout.tsx
 │   └── page.tsx
@@ -71,4 +76,4 @@ kriyamandiri/
 │   ├── cart.ts
 │   ├── checkout.ts
 │   └── database.ts
-└── middleware.ts           
+└── middleware.ts
