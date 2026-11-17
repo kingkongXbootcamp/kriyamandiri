@@ -1,12 +1,16 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { sanitizeAndValidateWhatsApp } from "@/lib/validators";
+import { checkRateLimit } from "@/lib/security";
 import {
   ServerCartItemInput,
   ServerCartVerificationResult,
   VerifiedCartItem,
 } from "@/types/cart";
+
+const MAX_DISTINCT_CART_ITEMS = 50;
 
 function createPublicServerSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,6 +33,22 @@ export async function verifyCartOnServer(
   storeSlug: string,
   clientItems: ServerCartItemInput[]
 ): Promise<ServerCartVerificationResult> {
+  const headerStore = await headers();
+  const ip =
+    headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+  const rate = checkRateLimit(`verify-cart:${ip}`, 30, 60 * 1000);
+  if (!rate.allowed) {
+    return {
+      valid: false,
+      items: [],
+      subtotalAmount: 0,
+      totalAmount: 0,
+      errors: [
+        `Terlalu banyak permintaan verifikasi. Coba lagi dalam ${rate.retryAfterSeconds} detik.`,
+      ],
+    };
+  }
+
   const errors: string[] = [];
 
   if (!storeSlug || !Array.isArray(clientItems) || clientItems.length === 0) {
@@ -38,6 +58,18 @@ export async function verifyCartOnServer(
       subtotalAmount: 0,
       totalAmount: 0,
       errors: ["Keranjang belanja kosong atau toko tidak valid."],
+    };
+  }
+
+  if (clientItems.length > MAX_DISTINCT_CART_ITEMS) {
+    return {
+      valid: false,
+      items: [],
+      subtotalAmount: 0,
+      totalAmount: 0,
+      errors: [
+        `Maksimal ${MAX_DISTINCT_CART_ITEMS} jenis produk dalam satu pesanan.`,
+      ],
     };
   }
 
@@ -56,8 +88,9 @@ export async function verifyCartOnServer(
   const cleanSlug = decodeURIComponent(storeSlug).toLowerCase().trim();
   const { data: store, error: storeError } = await supabase
     .from("stores")
-    .select("id, name, slug, whatsapp_number")
+    .select("id, name, slug, whatsapp_number, is_active")
     .eq("slug", cleanSlug)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (storeError || !store) {
@@ -66,7 +99,7 @@ export async function verifyCartOnServer(
       items: [],
       subtotalAmount: 0,
       totalAmount: 0,
-      errors: ["Toko tidak ditemukan."],
+      errors: ["Toko tidak ditemukan atau sedang nonaktif."],
     };
   }
 
@@ -83,17 +116,23 @@ export async function verifyCartOnServer(
     };
   }
 
-  // 2. Gabungkan kuantitas jika ada duplikat productId & validasi angka kuantitas
+  // 2. Gabungkan kuantitas & validasi angka kuantitas
   const quantityByProductId = new Map<string, number>();
   for (const rawItem of clientItems) {
-    if (!rawItem.productId || typeof rawItem.productId !== "string") {
+    if (
+      !rawItem ||
+      typeof rawItem.productId !== "string" ||
+      rawItem.productId.length > 64
+    ) {
       errors.push("ID produk tidak valid.");
       continue;
     }
 
     const qty = Math.floor(Number(rawItem.quantity));
     if (!Number.isFinite(qty) || qty < 1 || qty > 999) {
-      errors.push("Jumlah pembelian produk tidak valid (minimal 1, maksimal 999).");
+      errors.push(
+        "Jumlah pembelian produk tidak valid (minimal 1, maksimal 999)."
+      );
       continue;
     }
 
@@ -110,7 +149,8 @@ export async function verifyCartOnServer(
       items: [],
       subtotalAmount: 0,
       totalAmount: 0,
-      errors: errors.length > 0 ? errors : ["Tidak ada item valid di keranjang."],
+      errors:
+        errors.length > 0 ? errors : ["Tidak ada item valid di keranjang."],
     };
   }
 
@@ -135,12 +175,14 @@ export async function verifyCartOnServer(
   const verifiedItems: VerifiedCartItem[] = [];
   let subtotalAmount = 0;
 
-  // 4. Hitung ulang subtotal dan total harga berdasarkan harga server
+  // 4. Hitung ulang subtotal dan total harga berdasarkan harga resmi server
   for (const [productId, quantity] of quantityByProductId.entries()) {
     const dbProduct = dbProductMap.get(productId);
 
     if (!dbProduct || !dbProduct.is_active) {
-      errors.push("Salah satu produk di keranjang sudah tidak tersedia di toko ini.");
+      errors.push(
+        "Salah satu produk di keranjang sudah tidak tersedia di toko ini."
+      );
       continue;
     }
 
@@ -150,7 +192,10 @@ export async function verifyCartOnServer(
     }
 
     const authoritativeUnitPrice = Number(dbProduct.price);
-    if (!Number.isFinite(authoritativeUnitPrice) || authoritativeUnitPrice < 0) {
+    if (
+      !Number.isFinite(authoritativeUnitPrice) ||
+      authoritativeUnitPrice < 0
+    ) {
       errors.push(`Harga produk "${dbProduct.name}" tidak valid.`);
       continue;
     }

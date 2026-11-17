@@ -5,8 +5,8 @@ import {
   getPublicStoreBySlug,
   getPublicProductsByStoreId,
 } from "@/lib/public-catalog";
+import { sanitizeSafeHttpsUrl } from "@/lib/security";
 import PublicCatalogClient from "@/components/PublicCatalogClient";
-import PublicHeader from "@/components/PublicHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,6 @@ interface PublicStorePageProps {
   }>;
 }
 
-// 1. Fungsi buat SEO (Judul tab browser & preview WhatsApp)
 export async function generateMetadata({
   params,
 }: PublicStorePageProps): Promise<Metadata> {
@@ -31,10 +30,10 @@ export async function generateMetadata({
     };
   }
 
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://kriyamandiri.vercel.app").replace(
-    /\/$/,
-    ""
-  );
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://kriyamandiri.id"
+  ).replace(/\/$/, "");
+
   const fullUrl = baseUrl.startsWith("http")
     ? `${baseUrl}/${store.slug}`
     : `https://${baseUrl}/${store.slug}`;
@@ -43,6 +42,7 @@ export async function generateMetadata({
   const description =
     store.description ||
     `Lihat daftar produk dan harga terbaru dari ${store.name} di ${store.city}.`;
+  const safeLogoUrl = sanitizeSafeHttpsUrl(store.logo_url);
 
   return {
     title,
@@ -56,12 +56,11 @@ export async function generateMetadata({
       url: fullUrl,
       siteName: "KRIYAMANDIRI",
       type: "website",
-      ...(store.logo_url ? { images: [{ url: store.logo_url, alt: store.name }] } : {}),
+      ...(safeLogoUrl ? { images: [{ url: safeLogoUrl, alt: store.name }] } : {}),
     },
   };
 }
 
-// 2. Fungsi Utama Halaman Katalog
 export default async function PublicStorePage({ params }: PublicStorePageProps) {
   const { slug } = await params;
   const store = await getPublicStoreBySlug(slug);
@@ -71,13 +70,14 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
   }
 
   const products = await getPublicProductsByStoreId(store.id);
+  const safeLogoUrl = sanitizeSafeHttpsUrl(store.logo_url);
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
     name: store.name,
     description: store.description || undefined,
-    image: store.logo_url || undefined,
+    image: safeLogoUrl || undefined,
     address: {
       "@type": "PostalAddress",
       addressLocality: store.city,
@@ -85,13 +85,15 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
     },
   };
 
+  // Escape karakter '<' menjadi '\u003c' untuk mencegah XSS break-out dari tag </script>
+  const safeJsonLdString = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString }}
       />
-      <PublicHeader /> {/* <-- Header KRIYAMANDIRI dipasang di sini */}
       <PublicCatalogClient store={store} products={products} />
     </>
   );

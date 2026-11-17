@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { validateProductInput } from "@/lib/product-validators";
 import { extractOwnedStoragePath } from "@/lib/image-compressor";
+import {
+  sanitizeOwnedStorageImageUrl,
+  stripControlChars,
+} from "@/lib/security";
 
 export interface ProductPayload {
   name: string;
@@ -41,13 +45,12 @@ export async function getAuthenticatedSellerStore() {
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Gagal memuat data toko: ${error.message}`);
+    throw new Error("Gagal memuat data toko.");
   }
 
   return { user, store };
 }
 
-// Ambil seluruh daftar produk milik toko penjual
 export async function getSellerProducts(): Promise<ProductRecord[]> {
   const { store } = await getAuthenticatedSellerStore();
   if (!store) return [];
@@ -55,12 +58,14 @@ export async function getSellerProducts(): Promise<ProductRecord[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("id, store_id, name, price, description, image_url, is_available, created_at")
+    .select(
+      "id, store_id, name, price, description, image_url, is_available, created_at"
+    )
     .eq("store_id", store.id)
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw new Error(`Gagal mengambil daftar produk: ${error.message}`);
+    throw new Error("Gagal mengambil daftar produk.");
   }
 
   return (data || []).map((item) => ({
@@ -69,8 +74,9 @@ export async function getSellerProducts(): Promise<ProductRecord[]> {
   }));
 }
 
-// Ambil 1 produk milik toko untuk diedit
-export async function getOwnedProductById(productId: string): Promise<ProductRecord | null> {
+export async function getOwnedProductById(
+  productId: string
+): Promise<ProductRecord | null> {
   const { store } = await getAuthenticatedSellerStore();
   if (!store) return null;
 
@@ -92,40 +98,54 @@ export async function getOwnedProductById(productId: string): Promise<ProductRec
   };
 }
 
-// Simpan produk baru atau edit produk + hapus foto lama secara aman jika diganti
 export async function saveProduct(
   payload: ProductPayload,
   productId?: string
 ): Promise<{ success: boolean; productId: string }> {
   const { user, store } = await getAuthenticatedSellerStore();
-
   if (!store) {
-    throw new Error("Profil toko belum dibuat. Silakan lengkapi profil toko terlebih dahulu.");
+    throw new Error(
+      "Profil toko belum dibuat. Silakan lengkapi profil toko terlebih dahulu."
+    );
   }
 
+  const cleanName = stripControlChars(payload.name || "").trim();
+  const cleanDescription = payload.description
+    ? stripControlChars(payload.description, true).trim()
+    : undefined;
+
   const validation = validateProductInput({
-    name: payload.name,
+    name: cleanName,
     price: payload.price,
-    description: payload.description,
+    description: cleanDescription,
   });
 
   if (!validation.isValid) {
     throw new Error(validation.error);
   }
 
-  const supabase = await createClient();
+  // Verifikasi bahwa image_url benar-benar berasal dari bucket storage milik user.id ini
+  const imageValidation = sanitizeOwnedStorageImageUrl(
+    payload.image_url,
+    user.id
+  );
+  if (!imageValidation.valid) {
+    throw new Error(
+      "URL foto produk tidak sah. Unggah foto melalui formulir produk."
+    );
+  }
 
+  const supabase = await createClient();
   const cleanData = {
-    name: payload.name.trim(),
+    name: cleanName,
     price: Math.round(payload.price),
-    description: payload.description?.trim() || null,
-    image_url: payload.image_url || null,
+    description: cleanDescription || null,
+    image_url: imageValidation.sanitizedUrl,
     is_available: Boolean(payload.is_available),
     updated_at: new Date().toISOString(),
   };
 
   if (productId) {
-    // Ambil data lama termasuk image_url sebelum diupdate
     const { data: existingProduct } = await supabase
       .from("products")
       .select("id, store_id, image_url")
@@ -134,7 +154,9 @@ export async function saveProduct(
       .maybeSingle();
 
     if (!existingProduct) {
-      throw new Error("Produk tidak ditemukan atau Anda tidak memiliki akses untuk mengubahnya.");
+      throw new Error(
+        "Produk tidak ditemukan atau Anda tidak memiliki akses untuk mengubahnya."
+      );
     }
 
     const { data: updated, error } = await supabase
@@ -146,15 +168,17 @@ export async function saveProduct(
       .single();
 
     if (error) {
-      throw new Error(`Gagal memperbarui produk: ${error.message}`);
+      throw new Error("Gagal memperbarui produk.");
     }
 
-    // Jika foto diganti dan database sudah berhasil disimpan, hapus file foto lama dari storage
     if (
       existingProduct.image_url &&
       existingProduct.image_url !== cleanData.image_url
     ) {
-      const oldStoragePath = extractOwnedStoragePath(existingProduct.image_url, user.id);
+      const oldStoragePath = extractOwnedStoragePath(
+        existingProduct.image_url,
+        user.id
+      );
       if (oldStoragePath) {
         await supabase.storage.from("product-images").remove([oldStoragePath]);
       }
@@ -162,6 +186,7 @@ export async function saveProduct(
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/products");
+    revalidatePath(`/${store.slug}`);
     return { success: true, productId: updated.id };
   } else {
     const { data: inserted, error } = await supabase
@@ -174,16 +199,16 @@ export async function saveProduct(
       .single();
 
     if (error) {
-      throw new Error(`Gagal menambahkan produk: ${error.message}`);
+      throw new Error("Gagal menambahkan produk.");
     }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/products");
+    revalidatePath(`/${store.slug}`);
     return { success: true, productId: inserted.id };
   }
 }
 
-// Ubah cepat status Tersedia / Habis dari halaman daftar produk
 export async function toggleProductAvailability(
   productId: string,
   isAvailable: boolean
@@ -197,23 +222,25 @@ export async function toggleProductAvailability(
   const { error } = await supabase
     .from("products")
     .update({
-      is_available: isAvailable,
+      is_available: Boolean(isAvailable),
       updated_at: new Date().toISOString(),
     })
     .eq("id", productId)
     .eq("store_id", store.id);
 
   if (error) {
-    throw new Error(`Gagal mengubah status produk: ${error.message}`);
+    throw new Error("Gagal mengubah status produk.");
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/products");
+  revalidatePath(`/${store.slug}`);
   return { success: true };
 }
 
-// Hapus produk beserta file gambarnya dari cloud storage
-export async function deleteProduct(productId: string): Promise<{ success: boolean }> {
+export async function deleteProduct(
+  productId: string
+): Promise<{ success: boolean }> {
   const { user, store } = await getAuthenticatedSellerStore();
   if (!store) {
     throw new Error("Toko tidak ditemukan.");
@@ -221,7 +248,6 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
   const supabase = await createClient();
 
-  // 1. Cek kepemilikan dan ambil URL gambar sebelum menghapus record
   const { data: product } = await supabase
     .from("products")
     .select("id, image_url")
@@ -230,10 +256,11 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     .maybeSingle();
 
   if (!product) {
-    throw new Error("Produk tidak ditemukan atau Anda tidak berhak menghapusnya.");
+    throw new Error(
+      "Produk tidak ditemukan atau Anda tidak berhak menghapusnya."
+    );
   }
 
-  // 2. Hapus record produk di database
   const { error: deleteError } = await supabase
     .from("products")
     .delete()
@@ -241,10 +268,9 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     .eq("store_id", store.id);
 
   if (deleteError) {
-    throw new Error(`Gagal menghapus produk: ${deleteError.message}`);
+    throw new Error("Gagal menghapus produk.");
   }
 
-  // 3. Hapus file foto dari Supabase Storage jika ada
   if (product.image_url) {
     const storagePath = extractOwnedStoragePath(product.image_url, user.id);
     if (storagePath) {
@@ -254,10 +280,10 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/products");
+  revalidatePath(`/${store.slug}`);
   return { success: true };
 }
 
-// Hapus file sementara jika user mengganti foto berkali-kali sebelum menekan tombol Simpan
 export async function removeOrphanedUpload(imageUrl: string): Promise<void> {
   const { user } = await getAuthenticatedSellerStore();
   const storagePath = extractOwnedStoragePath(imageUrl, user.id);

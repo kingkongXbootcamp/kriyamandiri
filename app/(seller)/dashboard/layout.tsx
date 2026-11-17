@@ -1,14 +1,26 @@
 import React from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Store, LogOut } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import SellerNavigation, { DesktopSellerNav } from "@/components/SellerNavigation";
 import { logoutAction } from "@/actions/auth";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Defense-in-depth: Verifikasi ulang sesi pengguna di Server Layout selain Middleware
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       {/* Top Bar Aplikasi */}
@@ -26,7 +38,7 @@ export default function DashboardLayout({
           {/* Navigasi Desktop */}
           <DesktopSellerNav />
 
-          {/* Tombol Keluar (Logout) dengan area sentuh minimal 44px */}
+          {/* Tombol Keluar (Logout) */}
           <form action={logoutAction}>
             <button
               type="submit"
@@ -40,7 +52,7 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      {/* Area Konten Utama Responsif (Mobile & Desktop) */}
+      {/* Area Konten Utama Responsif */}
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-5 pb-24 sm:px-6 sm:pb-10">
         {children}
       </main>

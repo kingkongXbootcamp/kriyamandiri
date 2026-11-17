@@ -1,4 +1,5 @@
 import { sanitizeAndValidateWhatsApp } from "@/lib/validators";
+import { stripControlChars } from "@/lib/security";
 import { VerifiedCartItem } from "@/types/cart";
 import { BuyerShippingFormData } from "@/types/checkout";
 
@@ -16,43 +17,42 @@ export interface GeneratedWhatsAppOrder {
   whatsappUrl: string;
 }
 
-/**
- * Memformat angka nominal Rupiah dengan pemisah ribuan titik tanpa spasi non-breaking
- * Contoh: 150000 -> "150.000"
- */
 export function formatPlainRupiah(amount: number): string {
-  const safeAmount = Number.isFinite(amount) ? Math.max(0, Math.round(amount)) : 0;
+  const safeAmount = Number.isFinite(amount)
+    ? Math.max(0, Math.round(amount))
+    : 0;
   return new Intl.NumberFormat("id-ID", {
     maximumFractionDigits: 0,
   }).format(safeAmount);
 }
 
-/**
- * Menyusun teks pesanan terstruktur sesuai standar KRIYAMANDIRI
- */
 export function buildWhatsAppOrderMessage(
   payload: Omit<WhatsAppOrderPayload, "storeWhatsappNumber">
 ): string {
-  const cleanStoreName = payload.storeName.trim() || "Penjual";
+  const cleanStoreName =
+    stripControlChars(payload.storeName || "").trim() || "Penjual";
 
   const itemLines = payload.items.map((item, index) => {
+    const cleanItemName = stripControlChars(item.name || "").trim();
     const unitPriceFormatted = formatPlainRupiah(item.unitPrice);
     const subtotalFormatted = formatPlainRupiah(item.subtotal);
-    return `${index + 1}. ${item.name} - ${item.quantity} pcs x Rp${unitPriceFormatted}\n   Subtotal: Rp${subtotalFormatted}`;
+    return `${index + 1}. ${cleanItemName} - ${item.quantity} pcs x Rp${unitPriceFormatted}\n   Subtotal: Rp${subtotalFormatted}`;
   });
 
   const totalFormatted = formatPlainRupiah(payload.totalAmount);
 
   const shippingLines = [
-    `Nama: ${payload.buyer.fullName.trim()}`,
-    `No. HP: ${payload.buyer.whatsappNumber.trim()}`,
-    `Alamat: ${payload.buyer.fullAddress.trim()}`,
-    `Kecamatan: ${payload.buyer.district.trim()}`,
-    `Kota: ${payload.buyer.city.trim()}`,
+    `Nama: ${stripControlChars(payload.buyer.fullName || "").trim()}`,
+    `No. HP: ${stripControlChars(payload.buyer.whatsappNumber || "").trim()}`,
+    `Alamat: ${stripControlChars(payload.buyer.fullAddress || "").trim()}`,
+    `Kecamatan: ${stripControlChars(payload.buyer.district || "").trim()}`,
+    `Kota: ${stripControlChars(payload.buyer.city || "").trim()}`,
   ];
 
   if (payload.buyer.province && payload.buyer.province.trim().length > 0) {
-    shippingLines.push(`Provinsi: ${payload.buyer.province.trim()}`);
+    shippingLines.push(
+      `Provinsi: ${stripControlChars(payload.buyer.province).trim()}`
+    );
   }
 
   return [
@@ -74,10 +74,6 @@ export function buildWhatsAppOrderMessage(
   ].join("\n");
 }
 
-/**
- * Memvalidasi nomor WhatsApp toko dan menghasilkan tautan resmi https://wa.me/
- * Tidak menggunakan WhatsApp API berbayar maupun API tidak resmi.
- */
 export function generateWhatsAppOrderLink(
   payload: WhatsAppOrderPayload
 ): GeneratedWhatsAppOrder {
