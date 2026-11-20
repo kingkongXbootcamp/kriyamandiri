@@ -86,7 +86,6 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
     },
   };
 
-  // Escape karakter '<' menjadi '\u003c' untuk mencegah XSS break-out dari tag </script>
   const safeJsonLdString = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
   return (
@@ -95,16 +94,7 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdString }}
       />
-        return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLdString }}
-      />
-      <PublicHeader /> {/* <-- TAMBAHIN INI */}
-      <PublicCatalogClient store={store} products={products} />
-    </>
-  );
+      <PublicHeader />
       <PublicCatalogClient store={store} products={products} />
     </>
   );
