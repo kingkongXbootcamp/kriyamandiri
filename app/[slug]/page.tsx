@@ -7,6 +7,7 @@ import {
 } from "@/lib/public-catalog";
 import { sanitizeSafeHttpsUrl } from "@/lib/security";
 import PublicCatalogClient from "@/components/PublicCatalogClient";
+import PublicHeader from "@/components/PublicHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,16 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdString }}
       />
+        return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdString }}
+      />
+      <PublicHeader /> {/* <-- TAMBAHIN INI */}
+      <PublicCatalogClient store={store} products={products} />
+    </>
+  );
       <PublicCatalogClient store={store} products={products} />
     </>
   );
