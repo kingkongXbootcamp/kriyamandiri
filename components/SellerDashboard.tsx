@@ -25,7 +25,7 @@ export default function SellerDashboard({
   if (!store) {
     return (
       <div className="mx-auto mt-4 max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-600">
           <StoreIcon className="h-7 w-7" />
         </div>
         <h1 className="mt-4 text-lg font-extrabold text-slate-900">
@@ -45,9 +45,13 @@ export default function SellerDashboard({
     );
   }
 
-  const baseDomain = process.env.NEXT_PUBLIC_APP_URL || "kriyamandiri.id";
-  const cleanDomain = baseDomain.replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const publicStoreUrl = `https://${cleanDomain}/${store.slug}`;
+  const rawBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://kriyamandiri.id";
+  const normalizedBaseUrl = rawBaseUrl.startsWith("http")
+    ? rawBaseUrl.replace(/\/$/, "")
+    : `https://${rawBaseUrl.replace(/\/$/, "")}`;
+  const cleanDomain = normalizedBaseUrl.replace(/^https?:\/\//, "");
+  const publicStoreUrl = `${normalizedBaseUrl}/${store.slug}`;
 
   const handleCopyOrShare = async () => {
     const shareText = `Halo! Silakan lihat katalog produk *${store.name}* dan pesan langsung lewat WhatsApp di sini:`;
@@ -150,7 +154,7 @@ export default function SellerDashboard({
         </div>
       </section>
 
-      {/* 3. Tombol Aksi Utama & Katalog (Grid Adaptif Desktop) */}
+      {/* 3. Tombol Aksi Utama & Katalog */}
       <section className="grid grid-cols-1 gap-2.5 sm:grid-cols-12 sm:gap-3">
         <Link
           href="/dashboard/products/new"
@@ -215,7 +219,7 @@ export default function SellerDashboard({
         </div>
       </section>
 
-      {/* 5. Panduan Katalog Kosong (Hanya tampil jika jumlah produk = 0) */}
+      {/* 5. Panduan Katalog Kosong */}
       {stats.totalProducts === 0 && (
         <section className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />

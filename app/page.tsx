@@ -1,83 +1,53 @@
+import { getAllPublicStores } from "@/lib/public-catalog";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, MessageCircle, Store, Zap } from "lucide-react";
-import { Navbar } from "@/components/layout/Navbar"; // <-- TAMBAHIN INI
-import { Footer } from "@/components/layout/Footer"; // <-- TAMBAHIN INI
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const stores = await getAllPublicStores();
+
   return (
-    <>
-      <Navbar /> {/* <-- TAMBAHIN INI */}
-      
-      <div className="flex flex-col items-center justify-center px-4 py-12 sm:px-6 lg:py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-            <Zap className="h-3.5 w-3.5" />
-            <span>Fase 1: Katalog Instan & Order WhatsApp</span>
-          </div>
-
-          <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
-            Katalog Digital UMKM, Pesanan Langsung Masuk WhatsApp
-          </h1>
-
-          <p className="mt-4 text-base text-slate-600 sm:text-lg">
-            Tinggalkan format ketik manual yang melelahkan. Bagikan satu tautan
-            katalog toko Anda, biarkan pembeli memilih menu, dan terima rincian
-            pesanan rapi via WhatsApp.
-          </p>
-
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/register"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98]"
-            >
-              <span>Buka Toko Gratis</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-base font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
-            >
-              Masuk ke Toko Saya
-            </Link>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-4 text-left sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-brand-700">
-                <Store className="h-5 w-5" />
-              </div>
-              <h2 className="mt-3 font-semibold text-slate-900">Katalog Cepat</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Setup profil toko dan upload produk dalam hitungan menit lewat HP.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-whatsapp-600">
-                <MessageCircle className="h-5 w-5" />
-              </div>
-              <h2 className="mt-3 font-semibold text-slate-900">Format wa.me Otomatis</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Rincian barang, total harga, dan alamat pembeli tersusun rapi tanpa repot.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-              <h2 className="mt-3 font-semibold text-slate-900">Nol Biaya Server</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Arsitektur ringan dan cepat (&lt;2 detik) tanpa beban server yang mahal.
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header sederhana */}
+      <header className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <h1 className="font-bold text-emerald-700 text-lg">KRIYAMANDIRI</h1>
+          <Link href="/login" className="text-sm font-semibold text-emerald-600">
+            Buka Toko
+          </Link>
         </div>
-      </div>
+      </header>
 
-      <Footer /> {/* <-- TAMBAHIN INI */}
-    </>
+      {/* Direktori Toko */}
+      <main className="max-w-5xl mx-auto px-4 py-6">
+        <h2 className="text-xl font-bold mb-4">Temukan Toko Lokal</h2>
+        
+        {stores.length === 0 ? (
+          <p className="text-gray-500 text-center py-10">Belum ada toko yang terdaftar.</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {stores.map((store) => (
+              <Link 
+                href={`/${store.slug}`} 
+                key={store.id} 
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition"
+              >
+                <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                  {store.logo_url ? (
+                    <img src={store.logo_url} alt={store.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-3xl font-bold text-gray-300">{store.name.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <h3 className="font-semibold text-sm truncate">{store.name}</h3>
+                  <p className="text-xs text-gray-500 truncate">{store.city}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }

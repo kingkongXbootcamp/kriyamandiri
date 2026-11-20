@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { RESERVED_SLUGS } from "@/lib/validators";
 
 export interface PublicStore {
   id: string;
@@ -18,19 +19,6 @@ export interface PublicProduct {
   image_url: string | null;
   is_available: boolean;
 }
-
-const RESERVED_SLUGS = new Set([
-  "dashboard",
-  "login",
-  "register",
-  "auth",
-  "api",
-  "admin",
-  "settings",
-  "favicon.ico",
-  "robots.txt",
-  "sitemap.xml",
-]);
 
 function createPublicSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -53,7 +41,9 @@ function createPublicSupabaseClient() {
   });
 }
 
-export async function getPublicStoreBySlug(slug: string): Promise<PublicStore | null> {
+export async function getPublicStoreBySlug(
+  slug: string
+): Promise<PublicStore | null> {
   const cleanSlug = decodeURIComponent(slug || "").toLowerCase().trim();
   if (!cleanSlug || RESERVED_SLUGS.has(cleanSlug)) {
     return null;
@@ -68,6 +58,7 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStore | 
     .from("stores")
     .select("id, name, slug, description, city, logo_url, whatsapp_number")
     .eq("slug", cleanSlug)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (error) {
@@ -75,15 +66,6 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStore | 
       slug: cleanSlug,
       code: error.code,
       message: error.message,
-      details: error.details,
-      hint: error.hint,
-    });
-    return null;
-  }
-
-  if (!data) {
-    console.warn("[PUBLIC_CATALOG_WARN] Data toko tidak ditemukan (0 baris):", {
-      slug: cleanSlug,
     });
     return null;
   }
@@ -120,4 +102,26 @@ export async function getPublicProductsByStoreId(
     ...item,
     price: Number(item.price),
   }));
+}
+
+// Fungsi baru untuk Direktori Toko
+export async function getAllPublicStores(): Promise<PublicStore[]> {
+  const supabase = createPublicSupabaseClient();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("stores")
+    .select("id, name, slug, description, city, logo_url, whatsapp_number")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[PUBLIC_CATALOG_ERROR] Gagal query tabel stores:", {
+      code: error.code,
+      message: error.message,
+    });
+    return [];
+  }
+
+  return data || [];
 }

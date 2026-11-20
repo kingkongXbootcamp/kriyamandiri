@@ -1,6 +1,14 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import {
+  Camera,
+  ImagePlus,
+  ImageOff,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { compressProductImage } from "@/lib/image-compressor";
 import { removeOrphanedUpload } from "@/actions/product";
@@ -8,7 +16,7 @@ import { removeOrphanedUpload } from "@/actions/product";
 interface ProductImageUploaderProps {
   userId: string;
   currentImageUrl: string;
-  savedImageUrl?: string | null; // Foto yang sudah tersimpan di DB (jangan dihapus sebelum Simpan)
+  savedImageUrl?: string | null;
   onUploaded: (newUrl: string) => void;
   onUploadingChange?: (isUploading: boolean) => void;
 }
@@ -22,14 +30,12 @@ export default function ProductImageUploader({
 }: ProductImageUploaderProps) {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
-
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [compressionInfo, setCompressionInfo] = useState("");
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    // Reset value input agar file yang sama bisa dipilih ulang jika perlu
     e.target.value = "";
     if (!file) return;
 
@@ -48,7 +54,7 @@ export default function ProductImageUploader({
       const { error: uploadError } = await supabase.storage
         .from("product-images")
         .upload(filePath, compressedFile, {
-          cacheControl: "31536000", // Cache CDN 1 tahun untuk hemat bandwidth
+          cacheControl: "31536000",
           contentType: "image/webp",
           upsert: false,
         });
@@ -61,7 +67,6 @@ export default function ProductImageUploader({
         .from("product-images")
         .getPublicUrl(filePath);
 
-      // Jika sebelumnya sudah ada upload sementara yang belum disimpan ke DB, bersihkan
       if (currentImageUrl && currentImageUrl !== savedImageUrl) {
         await removeOrphanedUpload(currentImageUrl);
       }
@@ -71,7 +76,8 @@ export default function ProductImageUploader({
       );
       onUploaded(publicUrlData.publicUrl);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal mengunggah foto produk.";
+      const msg =
+        err instanceof Error ? err.message : "Gagal mengunggah foto produk.";
       setError(msg);
     } finally {
       setUploading(false);
@@ -101,42 +107,40 @@ export default function ProductImageUploader({
       />
 
       {/* Area Pratinjau Foto */}
-      <div className="border-2 border-dashed border-gray-300 rounded-2xl p-4 bg-gray-50 flex flex-col items-center justify-center min-h-[210px]">
+      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/70 p-4">
         {uploading ? (
-          <div className="text-center py-6">
-            <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-2.5" />
-            <p className="text-xs font-bold text-gray-800">Mengompres & mengunggah foto...</p>
-            <p className="text-[11px] text-gray-500 mt-1">
-              Otomatis memperkecil ukuran agar hemat kuota
+          <div className="py-6 text-center">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-emerald-600" />
+            <p className="mt-2.5 text-xs font-bold text-slate-800">
+              Mengompres &amp; mengunggah foto...
+            </p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Otomatis diperkecil agar hemat kuota &amp; cepat dibuka
             </p>
           </div>
         ) : currentImageUrl ? (
-          <div className="w-full text-center space-y-2.5">
+          <div className="w-full space-y-2.5 text-center">
             <img
               src={currentImageUrl}
-              alt="Foto produk"
-              className="w-44 h-44 object-cover rounded-xl mx-auto border border-gray-200 shadow-sm bg-white"
+              alt="Pratinjau foto produk"
+              className="mx-auto h-44 w-44 rounded-2xl border border-slate-200 bg-white object-cover shadow-xs"
             />
             {compressionInfo && (
-              <p className="text-[11px] font-medium text-emerald-700 bg-emerald-50 inline-block px-2.5 py-0.5 rounded-full">
-                {compressionInfo}
+              <p className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                <span>{compressionInfo}</span>
               </p>
             )}
           </div>
         ) : (
-          <div className="text-center py-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-2">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+          <div className="py-4 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+              <ImageOff className="h-6 w-6" />
             </div>
-            <p className="text-sm font-semibold text-gray-800">Belum ada foto produk</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="mt-3 text-sm font-bold text-slate-800">
+              Belum ada foto produk
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
               Format JPG, PNG, atau WebP (Maks. 8 MB)
             </p>
           </div>
@@ -149,22 +153,9 @@ export default function ProductImageUploader({
           type="button"
           disabled={uploading}
           onClick={() => cameraInputRef.current?.click()}
-          className="flex items-center justify-center gap-2 py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl transition disabled:opacity-50"
+          className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 active:scale-[0.98] disabled:opacity-50"
         >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
+          <Camera className="h-4 w-4 shrink-0" />
           <span>Ambil Kamera</span>
         </button>
 
@@ -172,23 +163,20 @@ export default function ProductImageUploader({
           type="button"
           disabled={uploading}
           onClick={() => galleryInputRef.current?.click()}
-          className="flex items-center justify-center gap-2 py-2.5 px-3 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 text-xs font-bold rounded-xl transition disabled:opacity-50"
+          className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50"
         >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-            />
-          </svg>
-          <span>Pilih dari Galeri</span>
+          <ImagePlus className="h-4 w-4 shrink-0" />
+          <span>Pilih Galeri</span>
         </button>
       </div>
 
       {error && (
-        <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium rounded-xl">
-          {error}
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+          <span>{error}</span>
         </div>
       )}
     </div>

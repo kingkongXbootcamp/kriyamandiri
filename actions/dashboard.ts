@@ -31,7 +31,7 @@ export async function getSellerDashboardData(): Promise<SellerDashboardPayload> 
     throw new Error("Sesi tidak valid. Silakan login kembali.");
   }
 
-  // 1. Ambil profil toko milik user yang sedang login
+  // 1. Ambil profil toko milik penjual yang sedang login
   const { data: store, error: storeError } = await supabase
     .from("stores")
     .select("id, name, slug, city, logo_url")
@@ -42,7 +42,7 @@ export async function getSellerDashboardData(): Promise<SellerDashboardPayload> 
     throw new Error(`Gagal memuat data toko: ${storeError.message}`);
   }
 
-  // Jika user belum mendaftarkan profil toko
+  // Jika penjual belum melengkapi profil toko
   if (!store) {
     return {
       store: null,
@@ -54,7 +54,7 @@ export async function getSellerDashboardData(): Promise<SellerDashboardPayload> 
     };
   }
 
-  // 2. Hitung statistik produk riil dari database (tanpa angka dummy)
+  // 2. Hitung statistik produk riil dari database
   const [totalQuery, activeQuery, outOfStockQuery] = await Promise.all([
     supabase
       .from("products")
