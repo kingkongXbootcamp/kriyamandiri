@@ -1,53 +1,193 @@
-import { getAllPublicStores } from "@/lib/public-catalog";
-import Link from "next/link";
+import Link from 'next/link';
+import { Store, Search, X, ImageOff, PackageSearch, ShoppingBag, ArrowUpRight } from 'lucide-react';
+import { getAllPublicProducts, searchAllProducts } from '@/lib/public-catalog';
+import PublicFooter from '@/components/PublicFooter';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
-  const stores = await getAllPublicStores();
+interface HomePageProps {
+  searchParams: Promise<{
+    q?: string | string[];
+  }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedParams = await searchParams;
+  const rawQuery = Array.isArray(resolvedParams?.q) ? resolvedParams.q[0] : resolvedParams?.q;
+  const searchQuery = (rawQuery || '').trim();
+  const isSearching = searchQuery.length > 0;
+
+  const products = isSearching ? await searchAllProducts(searchQuery) : await getAllPublicProducts();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header sederhana */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <h1 className="font-bold text-emerald-700 text-lg">KRIYAMANDIRI</h1>
-          <Link href="/login" className="text-sm font-semibold text-emerald-600">
-            Buka Toko
-          </Link>
+    <div className='flex min-h-screen flex-col bg-slate-50'>
+      {/* Header Global Responsif */}
+      <header className='sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm'>
+        <div className='mx-auto max-w-5xl px-4 py-2.5 sm:px-6'>
+          <div className='flex flex-wrap items-center justify-between gap-2.5 sm:flex-nowrap sm:gap-4'>
+            {/* Kiri: Logo & Nama KRIYAMANDIRI */}
+            <Link href='/' className='inline-flex min-h-[44px] shrink-0 items-center gap-2.5 rounded-xl pr-1 transition hover:opacity-90'>
+              <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs'>
+                <Store className='h-5 w-5' />
+              </div>
+              <div className='flex flex-col'>
+                <span className='text-base font-extrabold tracking-tight text-slate-900 sm:text-lg'>KRIYAMANDIRI</span>
+                <span className='hidden text-[10px] font-medium text-slate-500 sm:block'>Katalog UMKM Indonesia</span>
+              </div>
+            </Link>
+
+            {/* Kanan (di Mobile baris 1, di Desktop paling kanan): Tombol Buka Toko */}
+            <Link
+              href='/login'
+              className='inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-[0.98] sm:order-3 sm:text-sm'
+            >
+              <Store className='h-4 w-4' />
+              <span>Buka Toko</span>
+            </Link>
+
+            {/* Tengah (Full-width di Mobile baris 2, Tengah di Desktop): Search Bar Global */}
+            <form action='/' method='GET' role='search' className='order-3 w-full sm:order-2 sm:max-w-md sm:flex-1'>
+              <div className='relative flex items-center'>
+                <Search className='pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400' />
+                <input
+                  type='text'
+                  name='q'
+                  defaultValue={searchQuery}
+                  inputMode='search'
+                  enterKeyHint='search'
+                  placeholder='Cari produk di semua toko...'
+                  aria-label='Cari produk di semua toko'
+                  className='h-11 w-full rounded-xl border border-slate-200 bg-slate-100/80 pl-10 pr-24 text-base text-slate-900 placeholder-slate-400 transition focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 sm:text-sm'
+                />
+
+                {isSearching && (
+                  <Link
+                    href='/'
+                    aria-label='Hapus pencarian'
+                    className='absolute right-14 flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-200/70 hover:text-slate-800'
+                  >
+                    <X className='h-4 w-4' />
+                  </Link>
+                )}
+
+                <button
+                  type='submit'
+                  className='absolute right-1.5 inline-flex h-8 min-w-[44px] items-center justify-center rounded-lg bg-emerald-600 px-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 active:scale-95'
+                >
+                  Cari
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </header>
 
-      {/* Direktori Toko */}
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        <h2 className="text-xl font-bold mb-4">Temukan Toko Lokal</h2>
-        
-        {stores.length === 0 ? (
-          <p className="text-gray-500 text-center py-10">Belum ada toko yang terdaftar.</p>
+      {/* Konten Utama: Grid Produk Lintas Toko */}
+      <main className='mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6'>
+        {/* Bar Judul & Status Pencarian */}
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+          <div>
+            <h1 className='text-lg font-extrabold text-slate-900 sm:text-xl'>{isSearching ? `Hasil Pencarian "${searchQuery}"` : 'Produk Terbaru'}</h1>
+            <p className='mt-0.5 text-xs text-slate-500'>
+              {isSearching ? `Ditemukan ${products.length} produk dari berbagai toko UMKM` : 'Jelajahi produk pilihan UMKM dan pesan langsung via WhatsApp'}
+            </p>
+          </div>
+
+          {isSearching && (
+            <Link href='/' className='inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50'>
+              <X className='h-3.5 w-3.5' />
+              <span>Tampilkan Semua</span>
+            </Link>
+          )}
+        </div>
+
+        {/* Empty State / Grid Produk 2 Kolom Mobile & 4 Kolom Desktop */}
+        {products.length === 0 ? (
+          <div className='rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12'>
+            <div className='mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400'>
+              {isSearching ? <PackageSearch className='h-6 w-6' /> : <ShoppingBag className='h-6 w-6' />}
+            </div>
+            <h2 className='mt-4 text-base font-bold text-slate-900'>{isSearching ? 'Produk tidak ditemukan' : 'Belum ada produk yang dijual'}</h2>
+            <p className='mx-auto mt-1 max-w-sm text-xs leading-relaxed text-slate-500 sm:text-sm'>
+              {isSearching
+                ? `Tidak ada produk yang cocok dengan kata kunci "${searchQuery}". Coba gunakan kata kunci lain.`
+                : 'Jadilah UMKM pertama yang membuka katalog online dan menerima pesanan langsung via WhatsApp.'}
+            </p>
+            <div className='mt-5'>
+              {isSearching ? (
+                <Link href='/' className='inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700'>
+                  Lihat Semua Produk
+                </Link>
+              ) : (
+                <Link
+                  href='/register'
+                  className='inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700'
+                >
+                  Buka Toko Gratis
+                </Link>
+              )}
+            </div>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stores.map((store) => (
-              <Link 
-                href={`/${store.slug}`} 
-                key={store.id} 
-                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition"
+          <div className='grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4'>
+            {products.map((product, index) => (
+              <Link
+                href={`/${product.stores?.slug || ''}`}
+                key={product.id}
+                className='group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md active:scale-[0.99]'
               >
-                <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                  {store.logo_url ? (
-                    <img src={store.logo_url} alt={store.name} className="w-full h-full object-cover" />
+                {/* Foto Produk 1:1 */}
+                <div className='relative aspect-square w-full overflow-hidden bg-slate-100'>
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      loading={index < 4 ? 'eager' : 'lazy'}
+                      decoding='async'
+                      className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${!product.is_available ? 'opacity-55 grayscale' : ''}`}
+                    />
                   ) : (
-                    <span className="text-3xl font-bold text-gray-300">{store.name.charAt(0)}</span>
+                    <div className='flex h-full w-full flex-col items-center justify-center gap-1 text-slate-400'>
+                      <ImageOff className='h-5 w-5' />
+                      <span className='text-[11px]'>No Image</span>
+                    </div>
+                  )}
+
+                  {/* Badge Status Stok */}
+                  {!product.is_available ? (
+                    <div className='absolute inset-0 flex items-center justify-center bg-slate-900/50'>
+                      <span className='rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-extrabold text-white shadow-xs'>Habis</span>
+                    </div>
+                  ) : (
+                    <span className='absolute top-2 left-2 rounded-full bg-emerald-600/95 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs'>Tersedia</span>
                   )}
                 </div>
-                <div className="p-3">
-                  <h3 className="font-semibold text-sm truncate">{store.name}</h3>
-                  <p className="text-xs text-gray-500 truncate">{store.city}</p>
+
+                {/* Informasi Produk & Nama Toko */}
+                <div className='flex flex-1 flex-col justify-between p-3 sm:p-3.5'>
+                  <div>
+                    <h3 className='line-clamp-2 text-xs font-bold leading-snug text-slate-900 group-hover:text-emerald-700 sm:text-sm'>{product.name}</h3>
+                    <div className='mt-1.5 flex items-center gap-1 text-[11px] text-slate-500'>
+                      <Store className='h-3 w-3 shrink-0 text-emerald-600' />
+                      <span className='truncate font-medium'>{product.stores?.name || 'Toko UMKM'}</span>
+                    </div>
+                  </div>
+
+                  <div className='mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2'>
+                    <p className={`text-sm font-extrabold sm:text-base ${product.is_available ? 'text-emerald-700' : 'text-slate-400'}`}>Rp {product.price.toLocaleString('id-ID')}</p>
+                    <span className='inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-600 group-hover:text-white'>
+                      <ArrowUpRight className='h-4 w-4' />
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
           </div>
         )}
       </main>
+
+      {/* Footer Global */}
+      <PublicFooter />
     </div>
   );
 }
