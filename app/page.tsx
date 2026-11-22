@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Store, Search, X, ImageOff, PackageSearch, ShoppingBag, ArrowUpRight, User, LayoutDashboard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getAllPublicProducts, searchAllProducts } from '@/lib/public-catalog';
@@ -30,10 +31,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <header className='sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm'>
         <div className='mx-auto max-w-5xl px-4 py-2.5 sm:px-6'>
           <div className='flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3'>
-            {/* Kiri: Logo & Nama KRIYAMANDIRI */}
-            <Link href='/' className='inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl pr-1 transition hover:opacity-90'>
-              <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs'>
-                <Store className='h-5 w-5' />
+            {/* Kiri: Logo Resmi & Nama KRIYAMANDIRI */}
+            <Link href='/' className='inline-flex min-h-[44px] shrink-0 items-center gap-2.5 rounded-xl pr-1 transition hover:opacity-90'>
+              <div className='relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200/80 bg-white p-0.5 shadow-xs sm:h-11 sm:w-11'>
+                <Image src='/kriyamandiri-logo.webp' alt='Logo KRIYAMANDIRI' width={44} height={44} priority className='h-full w-full object-contain' />
               </div>
               <div className='flex flex-col'>
                 <span className='text-sm font-extrabold tracking-tight text-slate-900 sm:text-lg'>KRIYAMANDIRI</span>

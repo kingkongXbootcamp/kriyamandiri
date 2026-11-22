@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { Store } from "lucide-react";
+import Link from 'next/link';
+import Image from 'next/image';
 
 interface PublicFooterProps {
   /**
@@ -9,52 +9,31 @@ interface PublicFooterProps {
   hasFloatingCartBar?: boolean;
 }
 
-export default function PublicFooter({
-  hasFloatingCartBar = false,
-}: PublicFooterProps) {
+export default function PublicFooter({ hasFloatingCartBar = false }: PublicFooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer
-      className={`w-full border-t border-slate-200 bg-white ${
-        hasFloatingCartBar ? "pb-24 sm:pb-24" : "pb-8"
-      } pt-8`}
-    >
-      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 text-center sm:flex-row sm:px-6 sm:text-left">
+    <footer className={`w-full border-t border-slate-200 bg-white ${hasFloatingCartBar ? 'pb-24 sm:pb-24' : 'pb-8'} pt-8`}>
+      <div className='mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 text-center sm:flex-row sm:px-6 sm:text-left'>
         {/* Kiri: Identitas & Copyright KRIYAMANDIRI */}
-        <div className="space-y-1">
-          <Link
-            href="/"
-            className="inline-flex min-h-[44px] items-center gap-2 text-slate-900 transition hover:text-emerald-700"
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs">
-              <Store className="h-4 w-4" />
+        <div className='space-y-1'>
+          <Link href='/' className='inline-flex min-h-[44px] items-center gap-2.5 text-slate-900 transition hover:text-emerald-700'>
+            <span className='relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white p-0.5 shadow-xs'>
+              <Image src='/kriyamandiri-logo.webp' alt='Logo KRIYAMANDIRI' width={32} height={32} className='h-full w-full object-contain' />
             </span>
-            <span className="text-sm font-extrabold tracking-tight">
-              KRIYAMANDIRI
-            </span>
+            <span className='text-sm font-extrabold tracking-tight'>KRIYAMANDIRI</span>
           </Link>
-          <p className="text-xs text-slate-500">
-            &copy; {currentYear} KRIYAMANDIRI. Katalog Digital &amp; Order
-            WhatsApp UMKM Indonesia.
-          </p>
+          <p className='text-xs text-slate-500'>&copy; {currentYear} KRIYAMANDIRI. Katalog Digital &amp; Order WhatsApp UMKM Indonesia.</p>
         </div>
 
-        {/* Kanan: Kredit & Logo Placeholder Kingkong Bootcamp */}
-        <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2">
-          <span
-            aria-hidden="true"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-[10px] font-black tracking-tighter text-amber-400"
-          >
+        {/* Kanan: Kredit & Logo Kingkong Bootcamp */}
+        <div className='flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2'>
+          <span aria-hidden='true' className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-[10px] font-black tracking-tighter text-amber-400'>
             KB
           </span>
-          <div className="text-left">
-            <p className="text-[11px] leading-tight text-slate-500">
-              Dikembangkan oleh
-            </p>
-            <p className="text-xs font-extrabold leading-tight text-slate-800">
-              Kingkong Bootcamp
-            </p>
+          <div className='text-left'>
+            <p className='text-[11px] leading-tight text-slate-500'>Dikembangkan oleh</p>
+            <p className='text-xs font-extrabold leading-tight text-slate-800'>Kingkong Bootcamp</p>
           </div>
         </div>
       </div>
