@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Store, Search, X, ImageOff, PackageSearch, ShoppingBag, ArrowUpRight } from 'lucide-react';
+import { Store, Search, X, ImageOff, PackageSearch, ShoppingBag, ArrowUpRight, User, LayoutDashboard } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
 import { getAllPublicProducts, searchAllProducts } from '@/lib/public-catalog';
 import PublicFooter from '@/components/PublicFooter';
 
@@ -17,35 +18,59 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const searchQuery = (rawQuery || '').trim();
   const isSearching = searchQuery.length > 0;
 
-  const products = isSearching ? await searchAllProducts(searchQuery) : await getAllPublicProducts();
+  // Cek status sesi penjual di server dan ambil daftar produk secara paralel
+  const supabase = await createClient();
+  const [{ data: authData }, products] = await Promise.all([supabase.auth.getUser(), isSearching ? searchAllProducts(searchQuery) : getAllPublicProducts()]);
+
+  const isLoggedIn = Boolean(authData?.user);
 
   return (
     <div className='flex min-h-screen flex-col bg-slate-50'>
       {/* Header Global Responsif */}
       <header className='sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm'>
         <div className='mx-auto max-w-5xl px-4 py-2.5 sm:px-6'>
-          <div className='flex flex-wrap items-center justify-between gap-2.5 sm:flex-nowrap sm:gap-4'>
+          <div className='flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3'>
             {/* Kiri: Logo & Nama KRIYAMANDIRI */}
-            <Link href='/' className='inline-flex min-h-[44px] shrink-0 items-center gap-2.5 rounded-xl pr-1 transition hover:opacity-90'>
+            <Link href='/' className='inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl pr-1 transition hover:opacity-90'>
               <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs'>
                 <Store className='h-5 w-5' />
               </div>
               <div className='flex flex-col'>
-                <span className='text-base font-extrabold tracking-tight text-slate-900 sm:text-lg'>KRIYAMANDIRI</span>
+                <span className='text-sm font-extrabold tracking-tight text-slate-900 sm:text-lg'>KRIYAMANDIRI</span>
                 <span className='hidden text-[10px] font-medium text-slate-500 sm:block'>Katalog UMKM Indonesia</span>
               </div>
             </Link>
 
-            {/* Kanan (di Mobile baris 1, di Desktop paling kanan): Tombol Buka Toko */}
-            <Link
-              href='/login'
-              className='inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-[0.98] sm:order-3 sm:text-sm'
-            >
-              <Store className='h-4 w-4' />
-              <span>Buka Toko</span>
-            </Link>
+            {/* Kanan (Baris 1 di Mobile, Paling Kanan di Desktop): Member Area & Buka Toko */}
+            <div className='flex shrink-0 items-center gap-1.5 sm:order-3 sm:gap-2'>
+              {isLoggedIn ? (
+                <Link
+                  href='/dashboard'
+                  className='inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 active:scale-[0.98] sm:px-3.5 sm:text-sm'
+                >
+                  <LayoutDashboard className='h-4 w-4 shrink-0 text-emerald-700' />
+                  <span>Dashboard</span>
+                </Link>
+              ) : (
+                <Link
+                  href='/login'
+                  className='inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] sm:px-3.5 sm:text-sm'
+                >
+                  <User className='h-4 w-4 shrink-0 text-slate-600' />
+                  <span>Masuk Penjual</span>
+                </Link>
+              )}
 
-            {/* Tengah (Full-width di Mobile baris 2, Tengah di Desktop): Search Bar Global */}
+              <Link
+                href={isLoggedIn ? '/dashboard' : '/register'}
+                className='inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700 active:scale-[0.98] sm:px-4 sm:text-sm'
+              >
+                <Store className='h-4 w-4 shrink-0' />
+                <span>Buka Toko</span>
+              </Link>
+            </div>
+
+            {/* Tengah (Full-width Baris 2 di Mobile, Tengah di Desktop): Search Bar Global */}
             <form action='/' method='GET' role='search' className='order-3 w-full sm:order-2 sm:max-w-md sm:flex-1'>
               <div className='relative flex items-center'>
                 <Search className='pointer-events-none absolute left-3.5 h-4 w-4 text-slate-400' />
@@ -120,10 +145,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 </Link>
               ) : (
                 <Link
-                  href='/register'
+                  href={isLoggedIn ? '/dashboard' : '/register'}
                   className='inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700'
                 >
-                  Buka Toko Gratis
+                  {isLoggedIn ? 'Kelola Toko Saya' : 'Buka Toko Gratis'}
                 </Link>
               )}
             </div>
