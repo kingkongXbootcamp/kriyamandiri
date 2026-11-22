@@ -1,6 +1,8 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { getPublicStoreBySlug, getPublicProductsByStoreId } from '@/lib/public-catalog';
 import { sanitizeSafeHttpsUrl } from '@/lib/security';
 import PublicCatalogClient from '@/components/PublicCatalogClient';
@@ -80,9 +82,21 @@ export default async function PublicStorePage({ params }: PublicStorePageProps) 
   return (
     <div className='flex min-h-screen flex-col bg-slate-50'>
       <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: safeJsonLdString }} />
+
+      {/* TOMBOL KEMBALI KE BERANDA */}
+      <div className='w-full border-b border-slate-200 bg-white'>
+        <div className='max-w-3xl mx-auto px-4 py-2 sm:px-6'>
+          <Link href='/' className='inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-emerald-600 transition'>
+            <ArrowLeft className='h-4 w-4' />
+            <span>Kembali ke Beranda</span>
+          </Link>
+        </div>
+      </div>
+
       <div className='flex-1'>
         <PublicCatalogClient store={store} products={products} />
       </div>
+
       <PublicFooter hasFloatingCartBar />
     </div>
   );
