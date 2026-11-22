@@ -27,9 +27,9 @@ export default function PublicFooter({ hasFloatingCartBar = false }: PublicFoote
         </div>
 
         {/* Kanan: Kredit & Logo Kingkong Bootcamp */}
-        <div className='flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2'>
-          <span aria-hidden='true' className='flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-[10px] font-black tracking-tighter text-amber-400'>
-            KB
+        <div className='flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2'>
+          <span className='relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-900 shadow-xs'>
+            <Image src='/kingkong-bootcamp-logo.webp' alt='Logo Kingkong Bootcamp' width={36} height={36} className='h-full w-full object-cover' />
           </span>
           <div className='text-left'>
             <p className='text-[11px] leading-tight text-slate-500'>Dikembangkan oleh</p>
