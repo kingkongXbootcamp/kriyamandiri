@@ -139,7 +139,7 @@ export async function saveStoreProfile(input: StoreInput, existingStoreId?: stri
     };
   }
 
-  const cleanDescription = input.description ? stripControlChars(input.description, true).trim().slice(0, 300) : null;
+  const cleanDescription = input.description ? stripControlChars(input.description, true).trim().slice(0, 500) : null;
 
   const cleanSlug = (input.slug || '').toLowerCase().trim();
   if (RESERVED_SLUGS.has(cleanSlug)) {
