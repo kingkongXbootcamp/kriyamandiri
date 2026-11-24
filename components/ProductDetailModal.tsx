@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { PublicProduct } from '@/lib/public-catalog';
 import { formatRupiah } from '@/lib/cart-utils';
 
@@ -34,41 +35,53 @@ export default function ProductDetailModal({ product, storeName, quantityInCart,
     };
   }, [product, onClose]);
 
-  if (!product) return null;
+  if (!product || typeof document === 'undefined') return null;
 
   const isOutOfStock = !product.is_available;
 
-  return (
-    <div role='dialog' aria-modal='true' aria-labelledby='product-detail-title' className='fixed inset-0 z-50 flex flex-col justify-end sm:justify-center bg-black/50 backdrop-blur-[1px] sm:p-4'>
-      {/* Area klik backdrop untuk menutup modal */}
-      <div className='flex-1 sm:hidden' onClick={onClose} />
-      <div className='hidden sm:block fixed inset-0 -z-10' onClick={onClose} />
+  // Tutup modal saat pengguna mengetuk area gelap di luar kotak modal
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
+  return createPortal(
+    <div
+      role='dialog'
+      aria-modal='true'
+      aria-labelledby='product-detail-title'
+      onClick={handleBackdropClick}
+      className='fixed inset-0 z-[9999] flex flex-col justify-end sm:justify-center bg-black/60 backdrop-blur-[1px] sm:p-4 touch-manipulation'
+    >
       {/* Kontainer Modal */}
-      <div className='w-full max-w-lg mx-auto bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border-t sm:border border-gray-200 max-h-[90vh] flex flex-col overflow-hidden'>
-        {/* Header Modal: Nama Toko & Tombol Tutup (X) */}
-        <div className='px-4 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 bg-white shrink-0'>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className='w-full max-w-lg mx-auto bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border-t sm:border border-gray-200 max-h-[90dvh] flex flex-col overflow-hidden'
+      >
+        {/* Header Modal: Nama Toko & Tombol Tutup (X) Ramah Sentuhan */}
+        <div className='px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3 bg-white shrink-0'>
           <div className='min-w-0 flex items-center gap-2'>
-            <span className='w-2 h-2 rounded-full bg-emerald-600 shrink-0' />
-            <p className='text-xs font-bold text-gray-600 truncate'>{storeName}</p>
+            <span className='w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0' />
+            <p className='text-xs font-bold text-gray-700 truncate'>{storeName}</p>
           </div>
 
           <button
             type='button'
             onClick={onClose}
             aria-label='Tutup detail produk'
-            className='w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 flex items-center justify-center transition shrink-0'
+            className='w-10 h-10 -mr-1 rounded-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800 flex items-center justify-center transition shrink-0 touch-manipulation'
           >
-            <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2.2} d='M6 18L18 6M6 6l12 12' />
             </svg>
           </button>
         </div>
 
         {/* Konten Scrollable: Gambar Besar, Nama, Harga, & Deskripsi Lengkap */}
-        <div className='flex-1 overflow-y-auto'>
+        <div className='flex-1 overflow-y-auto overscroll-contain'>
           {/* Gambar Besar Produk */}
-          <div className='relative w-full aspect-square max-h-80 sm:max-h-96 bg-gray-100 overflow-hidden'>
+          <div className='relative w-full aspect-square max-h-72 sm:max-h-96 bg-gray-100 overflow-hidden'>
             {product.image_url ? (
               <img src={product.image_url} alt={product.name} className={`w-full h-full object-cover ${isOutOfStock ? 'opacity-55 grayscale' : ''}`} />
             ) : (
@@ -112,8 +125,8 @@ export default function ProductDetailModal({ product, storeName, quantityInCart,
           </div>
         </div>
 
-        {/* Footer Aksi: Tombol + Keranjang / Kontrol Kuantitas */}
-        <div className='p-4 border-t border-gray-200 bg-white shrink-0'>
+        {/* Footer Aksi: Tombol + Keranjang / Kontrol Kuantitas + Safe Area HP */}
+        <div className='p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-200 bg-white shrink-0'>
           {isOutOfStock ? (
             <button type='button' disabled aria-disabled='true' className='w-full py-3.5 px-4 bg-gray-100 border border-gray-200 text-gray-400 text-sm font-bold rounded-2xl cursor-not-allowed'>
               Stok Habis
@@ -122,7 +135,7 @@ export default function ProductDetailModal({ product, storeName, quantityInCart,
             <button
               type='button'
               onClick={() => onAddOneItem(product)}
-              className='w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-sm font-extrabold rounded-2xl shadow-sm transition flex items-center justify-center gap-2'
+              className='w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-sm font-extrabold rounded-2xl shadow-sm transition flex items-center justify-center gap-2 touch-manipulation'
             >
               <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2.5} d='M12 4v16m8-8H4' />
@@ -136,7 +149,7 @@ export default function ProductDetailModal({ product, storeName, quantityInCart,
                   type='button'
                   onClick={() => onDecreaseQty(product.id)}
                   aria-label={`Kurangi jumlah ${product.name}`}
-                  className='w-10 h-10 rounded-xl bg-white text-emerald-800 font-extrabold text-base shadow-xs hover:bg-emerald-100 transition flex items-center justify-center'
+                  className='w-10 h-10 rounded-xl bg-white text-emerald-800 font-extrabold text-base shadow-sm hover:bg-emerald-100 transition flex items-center justify-center touch-manipulation'
                 >
                   −
                 </button>
@@ -148,19 +161,20 @@ export default function ProductDetailModal({ product, storeName, quantityInCart,
                   type='button'
                   onClick={() => onAddOneItem(product)}
                   aria-label={`Tambah jumlah ${product.name}`}
-                  className='w-10 h-10 rounded-xl bg-emerald-600 text-white font-extrabold text-base shadow-xs hover:bg-emerald-700 transition flex items-center justify-center'
+                  className='w-10 h-10 rounded-xl bg-emerald-600 text-white font-extrabold text-base shadow-sm hover:bg-emerald-700 transition flex items-center justify-center touch-manipulation'
                 >
                   +
                 </button>
               </div>
 
-              <button type='button' onClick={onClose} className='py-3.5 px-5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-2xl transition shrink-0'>
+              <button type='button' onClick={onClose} className='py-3.5 px-5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-2xl transition shrink-0 touch-manipulation'>
                 Selesai
               </button>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

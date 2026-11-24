@@ -172,11 +172,11 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
         </div>
       </header>
 
-      {/* Kontainer Utama Mobile-First */}
-      <main className='flex-1 w-full max-w-lg mx-auto px-3.5 pt-4 pb-28 space-y-4'>
+      {/* Kontainer Utama Mobile-First (pb-32 agar kartu paling bawah tidak tertutup floating cart bar) */}
+      <main className='flex-1 w-full max-w-lg mx-auto px-3.5 pt-4 pb-32 space-y-4'>
         {/* Notifikasi Sesi / Validasi Stok */}
         {cartNotice && (
-          <div role='alert' className='bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3 text-xs flex items-start justify-between gap-2.5 shadow-xs'>
+          <div role='alert' className='bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3 text-xs flex items-start justify-between gap-2.5 shadow-sm'>
             <p className='leading-relaxed'>{cartNotice}</p>
             <button type='button' onClick={() => setCartNotice(null)} aria-label='Tutup pemberitahuan' className='text-amber-700 hover:text-amber-900 font-bold shrink-0 px-1'>
               ×
@@ -245,21 +245,22 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
               const isOutOfStock = !product.is_available;
 
               return (
-                <article key={product.id} className='bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm flex flex-col'>
-                  {/* Foto Produk Rasio 1:1 (Klik untuk Detail Produk) */}
-                  <div
-                    role='button'
-                    tabIndex={0}
-                    aria-label={`Lihat detail ${product.name}`}
-                    onClick={() => setSelectedProduct(product)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedProduct(product);
-                      }
-                    }}
-                    className='relative aspect-square w-full bg-gray-100 overflow-hidden cursor-pointer group'
-                  >
+                <article
+                  key={product.id}
+                  role='button'
+                  tabIndex={0}
+                  aria-label={`Lihat detail ${product.name}`}
+                  onClick={() => setSelectedProduct(product)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedProduct(product);
+                    }
+                  }}
+                  className='bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:border-emerald-300 active:scale-[0.99] transition flex flex-col cursor-pointer touch-manipulation select-none group'
+                >
+                  {/* Foto Produk Rasio 1:1 */}
+                  <div className='relative aspect-square w-full bg-gray-100 overflow-hidden'>
                     {product.image_url ? (
                       <img
                         src={product.image_url}
@@ -280,19 +281,15 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
                   {/* Detail & Tombol Tambah Satu Klik */}
                   <div className='p-3 flex-1 flex flex-col justify-between gap-2.5'>
                     <div>
-                      <h3
-                        onClick={() => setSelectedProduct(product)}
-                        className='text-xs sm:text-sm font-bold text-gray-900 hover:text-emerald-700 line-clamp-2 leading-snug cursor-pointer transition-colors'
-                      >
-                        {product.name}
-                      </h3>
+                      <h3 className='text-xs sm:text-sm font-bold text-gray-900 group-hover:text-emerald-700 line-clamp-2 leading-snug transition-colors'>{product.name}</h3>
 
                       {product.description && <p className='text-[11px] text-gray-500 line-clamp-2 mt-1 leading-normal'>{product.description}</p>}
 
                       <p className={`text-sm font-extrabold mt-1.5 ${isOutOfStock ? 'text-gray-400' : 'text-emerald-700'}`}>{formatRupiah(product.price)}</p>
                     </div>
 
-                    <div>
+                    {/* Area Tombol Keranjang (stopPropagation agar tidak ikut membuka modal) */}
+                    <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                       {isOutOfStock ? (
                         <button
                           type='button'
@@ -306,7 +303,7 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
                         <button
                           type='button'
                           onClick={() => handleAddOneItem(product)}
-                          className='w-full py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1'
+                          className='w-full py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1 touch-manipulation'
                         >
                           <span>+ Keranjang</span>
                         </button>
@@ -316,7 +313,7 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
                             type='button'
                             onClick={() => handleDecreaseQty(product.id)}
                             aria-label={`Kurangi jumlah ${product.name}`}
-                            className='w-7 h-7 rounded-lg bg-white text-emerald-800 font-extrabold text-sm shadow-xs hover:bg-emerald-100 transition flex items-center justify-center'
+                            className='w-7 h-7 rounded-lg bg-white text-emerald-800 font-extrabold text-sm shadow-sm hover:bg-emerald-100 transition flex items-center justify-center touch-manipulation'
                           >
                             −
                           </button>
@@ -325,7 +322,7 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
                             type='button'
                             onClick={() => handleAddOneItem(product)}
                             aria-label={`Tambah jumlah ${product.name}`}
-                            className='w-7 h-7 rounded-lg bg-emerald-600 text-white font-extrabold text-sm shadow-xs hover:bg-emerald-700 transition flex items-center justify-center'
+                            className='w-7 h-7 rounded-lg bg-emerald-600 text-white font-extrabold text-sm shadow-sm hover:bg-emerald-700 transition flex items-center justify-center touch-manipulation'
                           >
                             +
                           </button>
@@ -349,11 +346,15 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
 
       {/* 5. Sticky Floating Bar Ringkasan Keranjang di Bagian Bawah Layar HP */}
       {hydrated && cartSummary.totalItems > 0 && (
-        <div role='region' aria-label='Ringkasan Keranjang' className='fixed bottom-0 left-0 right-0 z-40 p-3 bg-gradient-to-t from-white via-white to-transparent pointer-events-none'>
+        <div
+          role='region'
+          aria-label='Ringkasan Keranjang'
+          className='fixed bottom-0 left-0 right-0 z-40 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-white via-white to-transparent pointer-events-none'
+        >
           <button
             type='button'
             onClick={() => setIsCartOpen(true)}
-            className='w-full max-w-lg mx-auto pointer-events-auto bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white rounded-2xl px-4 py-3 shadow-lg flex items-center justify-between transition'
+            className='w-full max-w-lg mx-auto pointer-events-auto bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white rounded-2xl px-4 py-3 shadow-lg flex items-center justify-between transition touch-manipulation'
           >
             <div className='flex items-center gap-3 text-left'>
               <div className='relative w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0'>
@@ -376,7 +377,7 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
               </div>
             </div>
 
-            <span className='inline-flex items-center gap-1 text-xs font-bold bg-white text-emerald-800 px-3 py-2 rounded-xl shadow-xs shrink-0'>
+            <span className='inline-flex items-center gap-1 text-xs font-bold bg-white text-emerald-800 px-3 py-2 rounded-xl shadow-sm shrink-0'>
               <span>Lihat Keranjang</span>
               <svg className='w-3.5 h-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2.5} d='M9 5l7 7-7 7' />
