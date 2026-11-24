@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { isValidSlug, sanitizeAndValidateWhatsApp, validateStoreLogoUrl } from '@/lib/validators';
+import { isValidSlug, RESERVED_SLUGS, sanitizeAndValidateWhatsApp, validateStoreLogoUrl } from '@/lib/validators';
 import { extractOwnedStoragePath } from '@/lib/image-compressor';
 import { stripControlChars } from '@/lib/security';
 
@@ -26,6 +26,27 @@ export interface StoreRecord {
   logo_url: string;
 }
 
+export interface SaveStoreActionResult {
+  success: boolean;
+  error?: string;
+  store?: StoreRecord;
+}
+
+function mapSupabaseStoreError(error: { code?: string; message?: string; details?: string; hint?: string }, fallbackMessage: string): string {
+  switch (error.code) {
+    case '42501':
+      return 'Akses ditolak oleh kebijakan keamanan database (RLS). Anda tidak berhak mengubah toko ini.';
+    case 'PGRST116':
+      return 'Data toko tidak ditemukan atau Anda tidak berhak mengedit toko ini.';
+    case '23505':
+      return 'URL/Slug toko ini sudah dipakai toko lain. Silakan gunakan slug yang berbeda.';
+    case '42703':
+      return `Struktur kolom database belum sinkron (${error.message || 'kolom tidak ditemukan'}).`;
+    default:
+      return error.message ? `${fallbackMessage} (${error.message})` : fallbackMessage;
+  }
+}
+
 export async function getCurrentUserStore(): Promise<StoreRecord | null> {
   const supabase = await createClient();
   const {
@@ -39,6 +60,13 @@ export async function getCurrentUserStore(): Promise<StoreRecord | null> {
   const { data, error } = await supabase.from('stores').select('id, user_id, name, slug, description, whatsapp_number, city, logo_url').eq('user_id', user.id).maybeSingle();
 
   if (error) {
+    console.error('[STORE_ACTION_ERROR] Gagal memuat profil toko:', {
+      userId: user.id,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
     throw new Error('Gagal memuat profil toko.');
   }
 
@@ -69,50 +97,87 @@ export async function checkSlugAvailability(slug: string, currentStoreId?: strin
     query = query.neq('id', currentStoreId);
   }
 
-  const { data } = await query.maybeSingle();
+  const { data, error } = await query.maybeSingle();
+  if (error) {
+    console.error('[STORE_ACTION_ERROR] Gagal mengecek ketersediaan slug:', {
+      slug: cleanSlug,
+      code: error.code,
+      message: error.message,
+    });
+    return false;
+  }
+
   return !data;
 }
 
-export async function saveStoreProfile(input: StoreInput, existingStoreId?: string) {
+export async function saveStoreProfile(input: StoreInput, existingStoreId?: string): Promise<SaveStoreActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error('Sesi login berakhir. Silakan login kembali.');
+    return {
+      success: false,
+      error: 'Sesi login berakhir. Silakan login kembali.',
+    };
   }
 
   const cleanName = stripControlChars(input.name || '').trim();
   if (cleanName.length < 3 || cleanName.length > 100) {
-    throw new Error('Nama toko harus antara 3 hingga 100 karakter.');
+    return {
+      success: false,
+      error: 'Nama toko harus antara 3 hingga 100 karakter.',
+    };
   }
 
   const cleanCity = stripControlChars(input.city || '').trim();
   if (cleanCity.length < 2 || cleanCity.length > 100) {
-    throw new Error('Kota atau lokasi toko wajib diisi (2–100 karakter).');
+    return {
+      success: false,
+      error: 'Kota atau lokasi toko wajib diisi (2–100 karakter).',
+    };
   }
 
   const cleanDescription = input.description ? stripControlChars(input.description, true).trim().slice(0, 300) : null;
 
   const cleanSlug = (input.slug || '').toLowerCase().trim();
+  if (RESERVED_SLUGS.has(cleanSlug)) {
+    return {
+      success: false,
+      error: `Slug "${cleanSlug}" dicadangkan oleh sistem. Silakan pilih nama tautan lain.`,
+    };
+  }
+
   if (!isValidSlug(cleanSlug)) {
-    throw new Error('Format slug tidak valid atau menggunakan nama sistem yang dicadangkan.');
+    return {
+      success: false,
+      error: 'Format slug tidak valid. Gunakan minimal 3 karakter huruf kecil, angka, dan tanda strip (-).',
+    };
   }
 
   const isSlugFree = await checkSlugAvailability(cleanSlug, existingStoreId);
   if (!isSlugFree) {
-    throw new Error('URL/Slug toko ini sudah digunakan toko lain. Silakan pilih yang lain.');
+    return {
+      success: false,
+      error: 'Slug sudah dipakai toko lain. Silakan pilih tautan unik lainnya.',
+    };
   }
 
   const phoneValidation = sanitizeAndValidateWhatsApp(input.whatsapp_number);
   if (!phoneValidation.isValid) {
-    throw new Error('Nomor WhatsApp tidak valid. Gunakan nomor aktif format Indonesia (contoh: 08123456789).');
+    return {
+      success: false,
+      error: 'Nomor WhatsApp tidak valid. Gunakan nomor aktif format Indonesia (contoh: 08123456789).',
+    };
   }
 
   const logoValidation = validateStoreLogoUrl(input.logo_url);
   if (!logoValidation.valid) {
-    throw new Error('URL logo toko tidak valid. Gunakan tautan gambar berawalan https://.');
+    return {
+      success: false,
+      error: 'URL logo toko tidak valid. Gunakan tautan gambar berawalan https://.',
+    };
   }
 
   const payload = {
@@ -126,23 +191,90 @@ export async function saveStoreProfile(input: StoreInput, existingStoreId?: stri
   };
 
   if (existingStoreId) {
-    const { data, error } = await supabase.from('stores').update(payload).eq('id', existingStoreId).eq('user_id', user.id).select().single();
+    // Ambil data toko lama untuk memverifikasi kepemilikan & mendapatkan slug lama
+    const { data: currentStore, error: fetchError } = await supabase.from('stores').select('id, user_id, slug').eq('id', existingStoreId).maybeSingle();
+
+    if (fetchError) {
+      console.error('[STORE_ACTION_ERROR] Gagal membaca toko sebelum update:', {
+        storeId: existingStoreId,
+        userId: user.id,
+        code: fetchError.code,
+        message: fetchError.message,
+        details: fetchError.details,
+        hint: fetchError.hint,
+      });
+      return {
+        success: false,
+        error: mapSupabaseStoreError(fetchError, 'Gagal memeriksa kepemilikan toko.'),
+      };
+    }
+
+    if (!currentStore || currentStore.user_id !== user.id) {
+      console.error('[STORE_ACTION_ERROR] Kepemilikan toko tidak cocok saat update:', {
+        storeId: existingStoreId,
+        authenticatedUserId: user.id,
+        ownerUserId: currentStore?.user_id || null,
+      });
+      return {
+        success: false,
+        error: 'Anda tidak berhak mengedit toko ini.',
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('stores')
+      .update(payload)
+      .eq('id', existingStoreId)
+      .eq('user_id', user.id)
+      .select('id, user_id, name, slug, description, whatsapp_number, city, logo_url')
+      .single();
 
     if (error) {
-      throw new Error('Gagal memperbarui profil toko.');
+      console.error('[STORE_ACTION_ERROR] Gagal UPDATE tabel stores:', {
+        storeId: existingStoreId,
+        userId: user.id,
+        payload,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      return {
+        success: false,
+        error: mapSupabaseStoreError(error, 'Gagal memperbarui profil toko.'),
+      };
     }
 
     revalidatePath('/');
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/profile');
+    if (currentStore.slug && currentStore.slug !== cleanSlug) {
+      revalidatePath(`/${currentStore.slug}`);
+    }
     revalidatePath(`/${cleanSlug}`);
-    return { success: true, store: data };
+
+    return {
+      success: true,
+      store: {
+        id: data.id,
+        user_id: data.user_id,
+        name: data.name,
+        slug: data.slug,
+        description: data.description || '',
+        whatsapp_number: data.whatsapp_number,
+        city: data.city,
+        logo_url: data.logo_url || '',
+      },
+    };
   } else {
     // Aturan bisnis MVP: 1 user = 1 toko
     const { data: alreadyOwned } = await supabase.from('stores').select('id').eq('user_id', user.id).maybeSingle();
 
     if (alreadyOwned) {
-      throw new Error('Akun Anda sudah memiliki toko terdaftar.');
+      return {
+        success: false,
+        error: 'Akun Anda sudah memiliki toko terdaftar.',
+      };
     }
 
     const { data, error } = await supabase
@@ -151,18 +283,42 @@ export async function saveStoreProfile(input: StoreInput, existingStoreId?: stri
         ...payload,
         user_id: user.id,
       })
-      .select()
+      .select('id, user_id, name, slug, description, whatsapp_number, city, logo_url')
       .single();
 
     if (error) {
-      throw new Error('Gagal mendaftarkan toko baru.');
+      console.error('[STORE_ACTION_ERROR] Gagal INSERT tabel stores:', {
+        userId: user.id,
+        payload,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      return {
+        success: false,
+        error: mapSupabaseStoreError(error, 'Gagal mendaftarkan toko baru.'),
+      };
     }
 
     revalidatePath('/');
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/profile');
     revalidatePath(`/${cleanSlug}`);
-    return { success: true, store: data };
+
+    return {
+      success: true,
+      store: {
+        id: data.id,
+        user_id: data.user_id,
+        name: data.name,
+        slug: data.slug,
+        description: data.description || '',
+        whatsapp_number: data.whatsapp_number,
+        city: data.city,
+        logo_url: data.logo_url || '',
+      },
+    };
   }
 }
 
@@ -199,6 +355,12 @@ export async function deleteStore(storeId: string): Promise<{ success: boolean }
   const { error: deleteError } = await supabase.from('stores').delete().eq('id', ownedStore.id).eq('user_id', user.id);
 
   if (deleteError) {
+    console.error('[STORE_ACTION_ERROR] Gagal DELETE tabel stores:', {
+      storeId: ownedStore.id,
+      userId: user.id,
+      code: deleteError.code,
+      message: deleteError.message,
+    });
     throw new Error('Gagal menghapus toko. Silakan coba lagi.');
   }
 
