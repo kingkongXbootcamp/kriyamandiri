@@ -202,7 +202,7 @@ export default function PublicCatalogClient({ store, products }: PublicCatalogCl
                 <span>{store.city}</span>
               </p>
 
-              {store.description && <p className='text-xs text-gray-600 mt-2 leading-relaxed'>{store.description}</p>}
+              {store.description && <p className='text-xs text-gray-600 mt-2 leading-relaxed whitespace-pre-wrap'>{store.description}</p>}
             </div>
           </div>
         </section>
