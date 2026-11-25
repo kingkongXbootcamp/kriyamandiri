@@ -1,24 +1,95 @@
-# PROJECT MASTER - KRIYAMANDIRI
+### 3. Pembaruan Dokumentasi: `docs/PROJECT_MASTER.md`
 
-## 1. Ringkasan Proyek
-KRIYAMANDIRI adalah platform web katalog online mobile-first yang dirancang khusus untuk UMKM Indonesia. Memungkinkan penjual mendigitalkan katalog produk dalam hitungan menit dan menerima pesanan terstruktur via WhatsApp (`wa.me`) tanpa biaya server tinggi maupun potongan komisi.
+Simpan pembaruan lengkap berikut pada **`docs/PROJECT_MASTER.md`**:
 
-## 2. Prinsip Arsitektur & Batasan Roadmap
-- **Bulan 1 (Akuisisi & Validasi - SELESAI):** Katalog Instan + Checkout Form + Generate Teks Pesanan WhatsApp (`wa.me`). Ongkir dihitung manual oleh penjual via chat WhatsApp.
-- **Bulan 2 (Monetisasi - Berikutnya):** Integrasi Agregator Logistik (API Biteship/Shipper) untuk cek ongkir instan, panggil kurir, dan cetak resi otomatis.
-- **Bulan 3 (Retensi - Rencana):** Modul kasir sederhana (POS) offline dan sinkronisasi stok otomatis.
-- **Server Cost Efficiency:** Katalog publik bersifat stateless dengan gambar WebP terkompresi di sisi klien (<150 KB) dan checkout langsung via protokol `wa.me` tanpa beban komputasi server berlebih.
-- **Mobile-First & Desktop-Adaptive UX:** Area sentuh minimal `44px`, input `16px` anti-zoom di perangkat seluler, tata letak responsif multi-kolom di desktop, serta dukungan lengkap *loading*, *empty*, dan *error states*.
-- **Defense-in-Depth Security:**
-  - Proteksi ganda sesi penjual pada `middleware.ts` (`/dashboard/*`) dan `app/(seller)/dashboard/layout.tsx`.
-  - Isolasi multi-tenant via PostgreSQL RLS dan verifikasi prefix folder `user.id` pada URL gambar produk.
-  - Pencegahan Stored XSS (escaping `\u003c` pada JSON-LD SSR dan validasi ketat protokol `https://`).
-  - Verifikasi ulang harga satuan, status stok, dan status aktif toko di server (`verifyCartOnServer`) sebelum membuat tautan `wa.me`.
-  - HTTP Security Headers (`X-Frame-Options: DENY`, `nosniff`, `HSTS`, `Permissions-Policy`) dan sliding-window rate limiter.
+````markdown
+# PROJECT_MASTER.md - KRIYAMANDIRI
 
-## 3. Tech Stack Terimplementasi
-- **Framework:** Next.js 15 (App Router, TypeScript)
-- **Styling & Ikon UI:** Tailwind CSS v3 + Lucide React
-- **Database, Auth & Storage:** Supabase (PostgreSQL + Row Level Security + SSR Cookie Auth + Storage Bucket `product-images`)
-- **Client Persistence:** `sessionStorage` (keranjang satu toko per sesi) & `localStorage` opt-in (profil pengiriman pembeli)
-- **Order Channel:** Native WhatsApp Protocol (`https://wa.me/628xxx?text=...` dengan `encodeURIComponent`)
+## 1. Gambaran Umum Proyek
+
+**KRIYAMANDIRI** adalah platform katalog online _mobile-first_ untuk UMKM Indonesia yang menghubungkan etalase produk instan dengan pemesanan langsung ke WhatsApp penjual, serta dilengkapi integrasi agregator logistik untuk cek ongkir real-time, pemanggilan kurir, dan cetak resi otomatis.
+
+## 2. Stack Teknologi
+
+- **Frontend & Full-stack Framework:** Next.js 15 (App Router), React, TypeScript
+- **Styling:** Tailwind CSS (Mobile-First UI)
+- **Backend, Database, Auth & Storage:** Supabase (PostgreSQL, Row Level Security, Supabase Auth, Supabase Storage)
+- **Agregator Logistik (Fase 2):** Biteship REST API
+- **Hosting & Deployment:** Vercel
+
+## 3. Arsitektur & Alur Sistem
+
+1. **Fase 1 – Akuisisi & Katalog WhatsApp (Selesai):**
+   - Penjual mendaftarkan profil toko (`/[slug]`) dan mengunggah produk maksimal 3 langkah dengan kompresi WebP otomatis.
+   - Pembeli membuka katalog tanpa login, mencari produk, melihat detail produk via modal, menambah ke keranjang sesi (1 toko per sesi), dan mengisi data pengiriman.
+2. **Fase 2 – Monetisasi & Logistik Biteship (Sedang Berjalan):**
+   - Penjual melengkapi titik asal pengiriman (_origin area & postal code_) dan berat produk (gram).
+   - Pembeli melihat pilihan tarif ongkir real-time saat checkout.
+   - Pesanan tersimpan di database beserta komisi platform per pengiriman, lalu penjual dapat memanggil kurir dan mencetak resi otomatis dari dashboard.
+
+## 4. Struktur Folder Proyek
+
+```text
+kriyamandiri/
+├── docs/
+│   ├── PROJECT_MASTER.md
+│   ├── PROJECT_PROGRESS.md
+│   └── DATABASE_SCHEMA.md
+├── supabase/
+│   └── migrations/
+│       ├── 01_init_stores.sql
+│       ├── 02_init_products.sql
+│       ├── 03_products_policies.sql
+│       ├── 04_storage_delete_policy.sql
+│       ├── 05_public_catalog_rls.sql
+│       └── 06_fase2_logistics_schema.sql
+├── src/                                  # (Jika menggunakan direktori src/)
+│   ├── middleware.ts
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   ├── login/page.tsx
+│   │   │   └── register/page.tsx
+│   │   ├── (seller)/
+│   │   │   └── dashboard/
+│   │   │       ├── layout.tsx
+│   │   │       ├── page.tsx
+│   │   │       ├── profile/page.tsx
+│   │   │       └── products/
+│   │   │           ├── page.tsx
+│   │   │           ├── new/page.tsx
+│   │   │           └── [id]/edit/page.tsx
+│   │   └── [slug]/
+│   │       ├── page.tsx
+│   │       ├── not-found.tsx
+│   │       └── checkout/page.tsx
+│   ├── actions/
+│   │   ├── auth.ts
+│   │   ├── store.ts
+│   │   ├── dashboard.ts
+│   │   ├── product.ts
+│   │   └── cart.ts
+│   ├── components/
+│   │   ├── SellerNavigation.tsx
+│   │   ├── SellerDashboard.tsx
+│   │   ├── StoreProfileForm.tsx
+│   │   ├── ProductImageUploader.tsx
+│   │   ├── ProductForm.tsx
+│   │   ├── ProductListClient.tsx
+│   │   ├── PublicCatalogClient.tsx
+│   │   ├── ProductDetailModal.tsx
+│   │   ├── CartDrawer.tsx
+│   │   └── CheckoutClient.tsx
+│   ├── lib/
+│   │   ├── supabase/
+│   │   ├── validators.ts
+│   │   ├── product-validators.ts
+│   │   ├── image-compressor.ts
+│   │   ├── public-catalog.ts
+│   │   ├── cart-utils.ts
+│   │   └── checkout-validators.ts
+│   └── types/
+│       ├── index.ts
+│       ├── cart.ts
+│       └── checkout.ts
+```
+````
