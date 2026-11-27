@@ -1,4 +1,5 @@
-import { VerifiedCartItem } from "@/types/cart";
+import { VerifiedCartItem } from '@/types/cart';
+import { ShippingRate } from '@/types/shipping';
 
 export interface BuyerShippingFormData {
   fullName: string;
@@ -29,7 +30,12 @@ export interface VerifiedCheckoutDraft {
   buyer: BuyerShippingFormData;
   items: VerifiedCartItem[];
   totalQuantity: number;
+  totalWeightGrams: number;
   subtotalAmount: number;
-  shippingIncluded: false;
+  selectedShippingRate: ShippingRate | null;
+  shippingCost: number;
+  totalAmount: number;
+  destinationAreaId?: string;
+  shippingIncluded: boolean;
   verifiedAt: string;
 }

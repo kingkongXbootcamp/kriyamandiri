@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Store, Search, X, ImageOff, PackageSearch, ShoppingBag, ArrowUpRight, User, LayoutDashboard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
-import { getAllPublicProducts, searchAllProducts } from '@/lib/public-catalog';
+import { getAllPublicProducts, searchAllProducts, PublicProductWithStore } from '@/lib/public-catalog';
 import PublicFooter from '@/components/PublicFooter';
 
 export const dynamic = 'force-dynamic';
@@ -156,7 +156,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         ) : (
           <div className='grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4'>
-            {products.map((product, index) => (
+            {products.map((product: PublicProductWithStore, index: number) => (
               <Link
                 href={`/${product.stores?.slug || ''}`}
                 key={product.id}

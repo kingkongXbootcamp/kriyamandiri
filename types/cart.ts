@@ -2,6 +2,7 @@ export interface CartItem {
   productId: string;
   name: string;
   price: number;
+  weight_grams?: number;
   image_url: string | null;
   quantity: number;
 }
@@ -43,7 +44,6 @@ export interface ServerCartVerificationResult {
   storeId?: string;
   storeName?: string;
   storeSlug?: string;
-  storeWhatsappNumber?: string;
   items: VerifiedCartItem[];
   subtotalAmount: number;
   totalAmount: number;

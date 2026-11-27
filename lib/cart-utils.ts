@@ -16,7 +16,6 @@ export function formatRupiah(amount: number): string {
   }).format(amount);
 }
 
-// Muat keranjang sesi dan pastikan hanya berlaku untuk 1 toko aktif
 export function loadSingleStoreSessionCart(currentStore: PublicStore): {
   items: CartItem[];
   replacedPreviousStoreName: string | null;
@@ -34,7 +33,6 @@ export function loadSingleStoreSessionCart(currentStore: PublicStore): {
 
     const parsed = JSON.parse(raw) as SessionCartData;
 
-    // Jika sesi sebelumnya milik toko yang berbeda, reset keranjang untuk toko saat ini
     if (parsed.storeId !== currentStore.id) {
       const hadItemsInOtherStore =
         Array.isArray(parsed.items) && parsed.items.length > 0;
@@ -56,7 +54,6 @@ export function loadSingleStoreSessionCart(currentStore: PublicStore): {
   }
 }
 
-// Simpan state keranjang sementara ke sessionStorage browser
 export function saveSingleStoreSessionCart(
   store: PublicStore,
   items: CartItem[]
@@ -77,18 +74,6 @@ export function saveSingleStoreSessionCart(
   }
 }
 
-// Bersihkan sesi keranjang setelah pesanan diteruskan ke WhatsApp
-export function clearSingleStoreSessionCart(): void {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.sessionStorage.removeItem(SESSION_CART_KEY);
-  } catch {
-    // Abaikan error storage
-  }
-}
-
-// Sinkronisasi item keranjang dengan status stok & harga terbaru dari database
 export function syncCartWithCatalog(
   storedItems: CartItem[],
   catalogProducts: PublicProduct[]
@@ -107,17 +92,16 @@ export function syncCartWithCatalog(
 
     const latestProduct = productMap.get(item.productId);
 
-    // Hapus item jika produk sudah nonaktif/dihapus atau status stoknya Habis
     if (!latestProduct || !latestProduct.is_available) {
       removedUnavailableNames.push(item.name);
       continue;
     }
 
-    // Perbarui nama, harga, dan foto dengan data terbaru dari database
     validItems.push({
       productId: latestProduct.id,
       name: latestProduct.name,
       price: latestProduct.price,
+      weight_grams: latestProduct.weight_grams ?? 250,
       image_url: latestProduct.image_url,
       quantity: item.quantity,
     });
@@ -126,7 +110,6 @@ export function syncCartWithCatalog(
   return { validItems, removedUnavailableNames };
 }
 
-// Hitung subtotal per produk, total kuantitas, dan total harga keseluruhan
 export function calculateCartSummary(items: CartItem[]): CartSummary {
   let totalItems = 0;
   let subtotalAmount = 0;

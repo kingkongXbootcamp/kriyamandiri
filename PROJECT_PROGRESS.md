@@ -1,8 +1,3 @@
-### 4. Pembaruan Dokumentasi: `docs/PROJECT_PROGRESS.md`
-
-Simpan pembaruan lengkap berikut pada **`docs/PROJECT_PROGRESS.md`**:
-
-```markdown
 # PROJECT_PROGRESS.md - KRIYAMANDIRI
 
 ## Fase 1: MVP Katalog Instan & WhatsApp (Selesai)
@@ -21,8 +16,8 @@ Simpan pembaruan lengkap berikut pada **`docs/PROJECT_PROGRESS.md`**:
 
 - [x] **Fase 2.1 – Langkah 1:** Riset & perbandingan API logistik (Biteship vs Shipper) — Dipilih: **Biteship**
 - [x] **Fase 2.1 – Langkah 2:** Skema database logistik (`06_fase2_logistics_schema.sql`: perluasan `stores` & `products`, tabel `orders`, `order_items`, `shipments`, RLS, dan fungsi RPC cek resi publik)
-- [ ] **Fase 2.1 – Langkah 3:** Layanan klien API Biteship (`lib/biteship.ts`) untuk pencarian area, cek ongkir real-time, pembuatan order kurir, dan pelacakan resi
+- [x] **Fase 2.1 – Langkah 3:** Integrasi layanan cek ongkir Biteship (`types/shipping.ts`, `lib/biteship.ts`, `actions/shipping.ts`)
+- [ ] **Fase 2.1 – Langkah 4:** Integrasi pilihan kurir & ongkir real-time ke UI Checkout
 - [ ] **Fase 2.2:** Pengaturan titik asal pengiriman (kode pos/area) pada Profil Toko & input berat produk (gram) pada Form Produk
 - [ ] **Fase 2.3:** Integrasi pilihan ongkir real-time + perhitungan komisi platform pada halaman Checkout & pengiriman ringkasan ke WhatsApp
 - [ ] **Fase 2.4:** Dashboard Manajemen Pesanan Penjual (Panggil Kurir, Cetak Resi Otomatis, dan Cek Resi)
-```
