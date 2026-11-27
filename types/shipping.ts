@@ -59,3 +59,18 @@ export interface BiteshipCourierResponse {
   error?: string;
   pricing?: BiteshipPricingItem[];
 }
+
+export interface FetchBiteshipRatesParams {
+  originAreaId: string;
+  destinationAreaId: string;
+  weightGrams: number;
+  courierCompany?: string;
+}
+
+export interface GetShippingRatesResult {
+  success: boolean;
+  rates: ShippingRate[];
+  resolvedOriginAreaId?: string;
+  resolvedDestinationAreaId?: string;
+  error?: string;
+}

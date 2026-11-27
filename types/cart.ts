@@ -44,6 +44,7 @@ export interface ServerCartVerificationResult {
   storeId?: string;
   storeName?: string;
   storeSlug?: string;
+  storeWhatsappNumber?: string;
   items: VerifiedCartItem[];
   subtotalAmount: number;
   totalAmount: number;

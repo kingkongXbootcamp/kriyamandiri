@@ -1,4 +1,4 @@
-import { BiteshipArea, BiteshipAreaResponse, BiteshipCourierResponse, BiteshipPricingItem, ShippingRate } from '@/types/shipping';
+import { BiteshipArea, BiteshipAreaResponse, BiteshipCourierResponse, BiteshipPricingItem, FetchBiteshipRatesParams, ShippingRate } from '@/types/shipping';
 
 const BITESHIP_BASE_URL = 'https://api.biteship.com/v1';
 
@@ -75,6 +75,24 @@ export async function searchBiteshipArea(query: string): Promise<BiteshipArea[]>
 }
 
 /**
+ * Mengonversi teks lokasi (kecamatan/kota) atau ID area menjadi area_id valid Biteship.
+ */
+export async function searchBiteshipAreaId(locationQuery: string): Promise<string | null> {
+  const cleanQuery = String(locationQuery || '').trim();
+  if (!cleanQuery) {
+    return null;
+  }
+
+  // Jika sudah berupa ID area Biteship (diawali "ID"), langsung kembalikan
+  if (/^ID[A-Z0-9]+$/i.test(cleanQuery)) {
+    return cleanQuery;
+  }
+
+  const areas = await searchBiteshipArea(cleanQuery);
+  return areas.length > 0 && areas[0].id ? areas[0].id : null;
+}
+
+/**
  * Mengambil daftar tarif ongkir real-time dari Biteship berdasarkan ID area asal, ID area tujuan, berat (gram), dan kurir.
  */
 export async function getBiteshipRates(originAreaId: string, destinationAreaId: string, weight: number, courier?: string): Promise<ShippingRate[]> {
@@ -139,4 +157,11 @@ export async function getBiteshipRates(originAreaId: string, destinationAreaId: 
     .filter((item) => Number.isFinite(Number(item.price)) && Number(item.price) >= 0)
     .map(mapPricingToShippingRate)
     .sort((a, b) => a.price - b.price);
+}
+
+/**
+ * Wrapper kompatibel untuk actions/shipping.ts yang menerima objek parameter.
+ */
+export async function fetchBiteshipShippingRates(params: FetchBiteshipRatesParams): Promise<ShippingRate[]> {
+  return getBiteshipRates(params.originAreaId, params.destinationAreaId, params.weightGrams, params.courierCompany);
 }
