@@ -67,10 +67,31 @@ export interface FetchBiteshipRatesParams {
   courierCompany?: string;
 }
 
+export type ShippingErrorStage = 'config' | 'origin' | 'destination' | 'rates';
+
+export interface SearchAreaResult {
+  success: boolean;
+  areaId: string | null;
+  matchedArea?: BiteshipArea;
+  areas: BiteshipArea[];
+  errorStage?: ShippingErrorStage;
+  error?: string;
+}
+
+export interface GetShippingRatesOptions {
+  originFallbackQueries?: string[];
+  destinationFallbackQueries?: string[];
+  destinationHints?: {
+    city?: string;
+    province?: string;
+  };
+}
+
 export interface GetShippingRatesResult {
   success: boolean;
   rates: ShippingRate[];
   resolvedOriginAreaId?: string;
   resolvedDestinationAreaId?: string;
+  errorStage?: ShippingErrorStage;
   error?: string;
 }

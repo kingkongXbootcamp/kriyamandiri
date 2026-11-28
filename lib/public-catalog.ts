@@ -8,6 +8,8 @@ export interface PublicStore {
   city: string;
   logo_url: string | null;
   origin_area_id?: string | null;
+  origin_postal_code?: string | null;
+  origin_address?: string | null;
 }
 
 export interface PublicProduct {
@@ -48,7 +50,6 @@ function isInternalOrInvalidSlug(cleanSlug: string): boolean {
   if (!cleanSlug || RESERVED_SLUGS.has(cleanSlug)) {
     return true;
   }
-  // Abaikan request internal Next.js dev server (__nextjs_original-stack-frames, dll.) & browser
   if (cleanSlug.startsWith('__nextjs') || cleanSlug.startsWith('_next') || cleanSlug.startsWith('.')) {
     return true;
   }
@@ -60,7 +61,7 @@ function createPublicSupabaseClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('project-id-anda')) {
-    console.error('[PUBLIC_CATALOG_ERROR] NEXT_PUBLIC_SUPABASE_URL atau NEXT_PUBLIC_SUPABASE_ANON_KEY belum diisi dengan kredensial asli di .env.local:', {
+    console.error('[PUBLIC_CATALOG_ERROR] NEXT_PUBLIC_SUPABASE_URL atau NEXT_PUBLIC_SUPABASE_ANON_KEY belum diisi dengan kredensial asli:', {
       supabaseUrl: supabaseUrl || '(kosong)',
       hasAnonKey: Boolean(supabaseAnonKey),
     });
@@ -98,9 +99,6 @@ function normalizeProductWithStore(row: RawProductWithStoreRow): PublicProductWi
   };
 }
 
-/**
- * Mengambil seluruh produk aktif dari semua toko untuk halaman depan (HomePage).
- */
 export async function getAllPublicProducts(limit = 48): Promise<PublicProductWithStore[]> {
   const supabase = createPublicSupabaseClient();
   if (!supabase) {
@@ -143,9 +141,6 @@ export async function getAllPublicProducts(limit = 48): Promise<PublicProductWit
   return ((data || []) as unknown as RawProductWithStoreRow[]).map(normalizeProductWithStore);
 }
 
-/**
- * Mencari produk aktif berdasarkan nama produk di semua toko.
- */
 export async function searchAllProducts(query: string, limit = 48): Promise<PublicProductWithStore[]> {
   const cleanQuery = String(query || '').trim();
   if (!cleanQuery) {
@@ -211,7 +206,7 @@ export async function getPublicStoreBySlug(slug: string): Promise<PublicStore | 
     return null;
   }
 
-  const { data, error } = await supabase.from('stores').select('id, name, slug, description, city, logo_url, origin_area_id').eq('slug', cleanSlug).maybeSingle();
+  const { data, error } = await supabase.from('stores').select('id, name, slug, description, city, logo_url, origin_area_id, origin_postal_code, origin_address').eq('slug', cleanSlug).maybeSingle();
 
   if (error) {
     console.error('[PUBLIC_CATALOG_ERROR] Gagal query tabel stores:', {

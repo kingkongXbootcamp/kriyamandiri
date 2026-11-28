@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PublicProduct, PublicStore } from '@/lib/public-catalog';
 import { CartItem } from '@/types/cart';
 import { BuyerFieldErrors, BuyerShippingFormData, VerifiedCheckoutDraft } from '@/types/checkout';
-import { ShippingRate } from '@/types/shipping';
+import { ShippingErrorStage, ShippingRate } from '@/types/shipping';
 import { calculateCartSummary, formatRupiah, loadSingleStoreSessionCart, saveSingleStoreSessionCart, syncCartWithCatalog } from '@/lib/cart-utils';
 import { clearSavedBuyerProfile, loadSavedBuyerProfile, saveBuyerProfileWithConsent, saveVerifiedCheckoutDraft, validateBuyerShippingForm } from '@/lib/checkout-validators';
 import { verifyCartOnServer } from '@/actions/cart';
@@ -42,6 +42,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
   const [resolvedDestinationAreaId, setResolvedDestinationAreaId] = useState<string | undefined>(undefined);
   const [loadingRates, setLoadingRates] = useState(false);
   const [ratesError, setRatesError] = useState<string | null>(null);
+  const [ratesErrorStage, setRatesErrorStage] = useState<ShippingErrorStage | null>(null);
   const [lastCheckedRouteKey, setLastCheckedRouteKey] = useState<string>('');
 
   // State validasi & proses submit
@@ -81,7 +82,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
 
   const cartSummary = useMemo(() => calculateCartSummary(cartItems), [cartItems]);
 
-  // Hitung total berat paket (gram) dari seluruh item keranjang
+  // Hitung total berat paket (gram) dari seluruh item keranjang (minimal 250 gr)
   const totalWeightGrams = useMemo(() => {
     const total = cartItems.reduce((sum, item) => {
       const unitWeight = typeof item.weight_grams === 'number' && item.weight_grams > 0 ? item.weight_grams : 250;
@@ -105,24 +106,41 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
         return;
       }
 
-      const originParam = (store.origin_area_id || store.city || '').trim();
-      const destinationParam = [cleanDistrict, cleanCity, cleanProvince].filter(Boolean).join(', ');
+      // Siapkan query alamat asal toko selengkap mungkin + fallback kode pos / alamat toko
+      const originPrimary = (store.origin_area_id || [store.city, store.origin_postal_code].filter(Boolean).join(', ') || '').trim();
+
+      const originFallbacks = [store.origin_postal_code || '', store.origin_address ? `${store.city}, ${store.origin_address}` : '', store.city || ''].filter(Boolean);
+
+      // Siapkan query alamat tujuan pembeli + fallback bertahap
+      const destinationPrimary = [cleanDistrict, cleanCity, cleanProvince].filter(Boolean).join(', ');
+
+      const destinationFallbacks = [`${cleanDistrict}, ${cleanCity}`, cleanDistrict].filter(Boolean);
 
       setLoadingRates(true);
       setRatesError(null);
+      setRatesErrorStage(null);
 
       try {
-        const result = await getShippingRates(originParam, destinationParam, totalWeightGrams);
+        const result = await getShippingRates(originPrimary, destinationPrimary, totalWeightGrams, undefined, {
+          originFallbackQueries: originFallbacks,
+          destinationFallbackQueries: destinationFallbacks,
+          destinationHints: {
+            city: cleanCity,
+            province: cleanProvince,
+          },
+        });
 
         if (!result.success) {
           setShippingRates([]);
           setSelectedRate(null);
+          setRatesErrorStage(result.errorStage || null);
           setRatesError(result.error || 'Gagal mengecek tarif pengiriman untuk alamat ini.');
           return;
         }
 
         setShippingRates(result.rates);
         setResolvedDestinationAreaId(result.resolvedDestinationAreaId);
+        setRatesErrorStage(result.rates.length === 0 ? result.errorStage || 'rates' : null);
         setRatesError(result.rates.length === 0 ? result.error || null : null);
 
         // Pertahankan pilihan kurir sebelumnya jika masih tersedia, atau pilih yang termurah
@@ -137,12 +155,13 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
       } catch {
         setShippingRates([]);
         setSelectedRate(null);
+        setRatesErrorStage('rates');
         setRatesError('Terjadi gangguan koneksi saat mengambil tarif pengiriman.');
       } finally {
         setLoadingRates(false);
       }
     },
-    [store.origin_area_id, store.city, totalWeightGrams],
+    [store.origin_area_id, store.origin_postal_code, store.origin_address, store.city, totalWeightGrams],
   );
 
   // Otomatis cek ongkir saat checkout dimuat (jika alamat sudah terisi) atau saat kecamatan/kota diubah
@@ -157,6 +176,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
       setShippingRates([]);
       setSelectedRate(null);
       setRatesError(null);
+      setRatesErrorStage(null);
       setLastCheckedRouteKey('');
       return;
     }
@@ -205,6 +225,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
     setShippingRates([]);
     setSelectedRate(null);
     setRatesError(null);
+    setRatesErrorStage(null);
     setLastCheckedRouteKey('');
     setFieldErrors({});
   };
@@ -441,7 +462,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
                 maxLength={100}
                 value={formData.district}
                 onChange={(e) => handleFieldChange('district', e.target.value)}
-                placeholder='Contoh: Beji'
+                placeholder='Contoh: Pancoran'
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
                   fieldErrors.district ? 'border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20' : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
                 }`}
@@ -461,7 +482,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
                 maxLength={100}
                 value={formData.city}
                 onChange={(e) => handleFieldChange('city', e.target.value)}
-                placeholder='Contoh: Kota Depok'
+                placeholder='Contoh: Jakarta Selatan'
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
                   fieldErrors.city ? 'border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20' : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
                 }`}
@@ -481,7 +502,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
                 maxLength={100}
                 value={formData.province}
                 onChange={(e) => handleFieldChange('province', e.target.value)}
-                placeholder='Contoh: Jawa Barat'
+                placeholder='Contoh: DKI Jakarta'
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-base sm:text-sm outline-none transition ${
                   fieldErrors.province ? 'border-rose-500 bg-rose-50/40 focus:ring-2 focus:ring-rose-500/20' : 'border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
                 }`}
@@ -542,6 +563,7 @@ export default function CheckoutClient({ store, products }: CheckoutClientProps)
               }}
               isLoading={loadingRates}
               error={ratesError}
+              errorStage={ratesErrorStage}
               onRetry={() => fetchRatesForAddress(formData.district, formData.city, formData.province)}
             />
           )}

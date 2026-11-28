@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShippingRate } from '@/types/shipping';
+import { ShippingErrorStage, ShippingRate } from '@/types/shipping';
 import { formatRupiah } from '@/lib/cart-utils';
 
 export interface ShippingSelectorProps {
@@ -10,10 +10,24 @@ export interface ShippingSelectorProps {
   onSelectRate: (rate: ShippingRate) => void;
   isLoading?: boolean;
   error?: string | null;
+  errorStage?: ShippingErrorStage | null;
   onRetry?: () => void;
 }
 
-export default function ShippingSelector({ shippingRates, selectedRate, onSelectRate, isLoading = false, error = null, onRetry }: ShippingSelectorProps) {
+function getErrorHeading(stage?: ShippingErrorStage | null): string {
+  switch (stage) {
+    case 'origin':
+      return 'Alamat Asal Toko Tidak Ditemukan';
+    case 'destination':
+      return 'Alamat Tujuan Pengiriman Tidak Ditemukan';
+    case 'rates':
+      return 'Gagal Menghitung Ongkos Kirim';
+    default:
+      return 'Gagal Memuat Ongkos Kirim';
+  }
+}
+
+export default function ShippingSelector({ shippingRates, selectedRate, onSelectRate, isLoading = false, error = null, errorStage = null, onRetry }: ShippingSelectorProps) {
   if (isLoading) {
     return (
       <div aria-busy='true' aria-label='Memuat pilihan kurir' className='space-y-2.5'>
@@ -37,7 +51,7 @@ export default function ShippingSelector({ shippingRates, selectedRate, onSelect
   if (error) {
     return (
       <div role='alert' className='p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-2'>
-        <p className='font-bold'>Gagal memuat ongkos kirim</p>
+        <p className='font-bold'>{getErrorHeading(errorStage)}</p>
         <p className='leading-relaxed'>{error}</p>
         {onRetry && (
           <button type='button' onClick={onRetry} className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition'>
