@@ -1,12 +1,18 @@
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
 export interface ShippingRate {
-  courier: string; // Kode perusahaan kurir, misal: "jne", "jnt", "sicepat"
-  courier_name: string; // Nama tampilan kurir, misal: "JNE", "J&T Express"
-  service: string; // Kode layanan kurir, misal: "reg", "yes", "ez"
-  service_name: string; // Nama layanan kurir, misal: "Reguler"
+  courier: string; // Kode perusahaan kurir, misal: "gojek", "grab", "jne", "sicepat"
+  courier_name: string; // Nama tampilan kurir, misal: "GoSend", "GrabExpress", "JNE"
+  service: string; // Kode layanan kurir, misal: "instant", "same_day", "reg"
+  service_name: string; // Nama layanan kurir, misal: "Instant", "Reguler"
   description: string; // Keterangan layanan
   price: number; // Tarif ongkir dalam Rupiah
-  estimated_delivery: string; // Estimasi waktu pengiriman, misal: "1 - 2 days"
+  estimated_delivery: string; // Estimasi waktu pengiriman, misal: "1 - 2 hours" atau "1 - 2 days"
   currency: string; // Mata uang, default: "IDR"
+  shipping_type?: 'instant' | 'regular'; // Kategori layanan untuk pengelompokan UI
 }
 
 export interface BiteshipArea {
@@ -65,6 +71,8 @@ export interface FetchBiteshipRatesParams {
   destinationAreaId: string;
   weightGrams: number;
   courierCompany?: string;
+  originCoordinates?: Coordinates | null;
+  destinationCoordinates?: Coordinates | null;
 }
 
 export type ShippingErrorStage = 'config' | 'origin' | 'destination' | 'rates';
@@ -85,6 +93,10 @@ export interface GetShippingRatesOptions {
     city?: string;
     province?: string;
   };
+  originCoordinates?: Coordinates | null;
+  destinationCoordinates?: Coordinates | null;
+  originAddressText?: string;
+  destinationAddressText?: string;
 }
 
 export interface GetShippingRatesResult {
@@ -92,6 +104,8 @@ export interface GetShippingRatesResult {
   rates: ShippingRate[];
   resolvedOriginAreaId?: string;
   resolvedDestinationAreaId?: string;
+  resolvedOriginCoordinates?: Coordinates | null;
+  resolvedDestinationCoordinates?: Coordinates | null;
   errorStage?: ShippingErrorStage;
   error?: string;
 }

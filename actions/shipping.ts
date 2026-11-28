@@ -1,7 +1,7 @@
 'use server';
 
-import { getBiteshipRates, isValidBiteshipAreaId, searchBiteshipArea } from '@/lib/biteship';
-import { BiteshipArea, GetShippingRatesOptions, GetShippingRatesResult, SearchAreaResult } from '@/types/shipping';
+import { DEFAULT_COURIERS, geocodeAddressToCoordinates, getBiteshipRates, isValidBiteshipAreaId, isValidCoordinates, searchBiteshipArea } from '@/lib/biteship';
+import { BiteshipArea, Coordinates, GetShippingRatesOptions, GetShippingRatesResult, SearchAreaResult } from '@/types/shipping';
 
 const PROVINCE_ABBREVIATIONS: Record<string, string> = {
   dki: 'DKI Jakarta',
@@ -23,7 +23,6 @@ const PROVINCE_ABBREVIATIONS: Record<string, string> = {
   ntt: 'Nusa Tenggara Timur',
 };
 
-// Pengayaan alamat khusus untuk nama kelurahan/kawasan populer yang sering ditulis singkat oleh penjual
 const KNOWN_SUBAREA_EXPANSIONS: Record<string, string[]> = {
   cibubur: ['Cibubur, Ciracas, Jakarta Timur, DKI Jakarta', 'Cibubur, Jakarta Timur', '13720', 'Cibubur'],
 };
@@ -60,7 +59,6 @@ function buildCandidateQueries(primaryQuery: string, fallbackQueries: string[] =
   const normalizedPrimary = normalizeLocationText(primaryQuery);
   const lowerPrimary = normalizedPrimary.toLowerCase();
 
-  // Jika input persis nama kawasan singkat seperti "Cibubur", dahulukan alamat lengkapnya
   if (KNOWN_SUBAREA_EXPANSIONS[lowerPrimary]) {
     for (const expanded of KNOWN_SUBAREA_EXPANSIONS[lowerPrimary]) {
       pushUnique(expanded);
@@ -123,7 +121,6 @@ function selectBestMatchingArea(areas: BiteshipArea[], hints?: { city?: string; 
 
 /**
  * Mengubah teks alamat (kelurahan, kecamatan, kota, atau kode pos) menjadi area_id sah Biteship.
- * Tidak pernah mengembalikan nama lokasi mentah sebagai pengganti area_id.
  */
 export async function searchArea(query: string, fallbackQueries: string[] = [], locationHints?: { city?: string; province?: string }): Promise<SearchAreaResult> {
   const cleanQuery = String(query || '').trim();
@@ -137,11 +134,7 @@ export async function searchArea(query: string, fallbackQueries: string[] = [], 
     };
   }
 
-  // Jika sudah berupa area_id Biteship valid (misal dari database stores.origin_area_id)
   if (isValidBiteshipAreaId(cleanQuery)) {
-    console.log('[BITESHIP_SEARCH_AREA] Menggunakan area_id tersimpan:', {
-      areaId: cleanQuery,
-    });
     return {
       success: true,
       areaId: cleanQuery,
@@ -204,8 +197,7 @@ export async function searchArea(query: string, fallbackQueries: string[] = [], 
 }
 
 /**
- * Mengambil daftar tarif ongkir real-time dari Biteship.
- * Memvalidasi & me-resolve originAreaId dan destinationAreaId terlebih dahulu, lalu memanggil getBiteshipRates.
+ * Mengambil daftar tarif ongkir reguler & instan (GoSend, GrabExpress, Lalamove, Borzo) dari Biteship.
  */
 export async function getShippingRates(
   originAreaId: string,
@@ -239,16 +231,15 @@ export async function getShippingRates(
 
   // 1. Resolve Origin area_id (Alamat Asal Toko)
   const originRes = isValidBiteshipAreaId(cleanOriginInput)
-    ? { success: true, areaId: cleanOriginInput, areas: [] as BiteshipArea[] }
+    ? {
+        success: true,
+        areaId: cleanOriginInput,
+        matchedArea: undefined,
+        areas: [] as BiteshipArea[],
+      }
     : await searchArea(cleanOriginInput, options?.originFallbackQueries || []);
 
   if (!originRes.success || !originRes.areaId || !isValidBiteshipAreaId(originRes.areaId)) {
-    console.error('[BITESHIP_SHIPPING_ORIGIN_ERROR]', {
-      originInput: cleanOriginInput,
-      originFallbackQueries: options?.originFallbackQueries || [],
-      error: originRes.error,
-    });
-
     return {
       success: false,
       rates: [],
@@ -262,17 +253,12 @@ export async function getShippingRates(
     ? {
         success: true,
         areaId: cleanDestinationInput,
+        matchedArea: undefined,
         areas: [] as BiteshipArea[],
       }
     : await searchArea(cleanDestinationInput, options?.destinationFallbackQueries || [], options?.destinationHints);
 
   if (!destinationRes.success || !destinationRes.areaId || !isValidBiteshipAreaId(destinationRes.areaId)) {
-    console.error('[BITESHIP_SHIPPING_DESTINATION_ERROR]', {
-      destinationInput: cleanDestinationInput,
-      destinationFallbackQueries: options?.destinationFallbackQueries || [],
-      error: destinationRes.error,
-    });
-
     return {
       success: false,
       rates: [],
@@ -284,18 +270,31 @@ export async function getShippingRates(
   const resolvedOriginId = originRes.areaId;
   const resolvedDestinationId = destinationRes.areaId;
 
-  console.log('[BITESHIP_SHIPPING_RESOLVED_IDS]', {
-    originInput: cleanOriginInput,
+  // 3. Resolve koordinat asal & tujuan (wajib untuk tarif kurir instan GoSend/Grab/Lalamove/Borzo)
+  const originAddressForGeocode = options?.originAddressText || originRes.matchedArea?.name || (KNOWN_SUBAREA_EXPANSIONS[cleanOriginInput.toLowerCase()]?.[0] ?? cleanOriginInput);
+
+  const destinationAddressForGeocode = options?.destinationAddressText || destinationRes.matchedArea?.name || cleanDestinationInput;
+
+  const [resolvedOriginCoords, resolvedDestinationCoords]: [Coordinates | null, Coordinates | null] = await Promise.all([
+    isValidCoordinates(options?.originCoordinates) ? Promise.resolve(options!.originCoordinates!) : geocodeAddressToCoordinates(originAddressForGeocode),
+    isValidCoordinates(options?.destinationCoordinates) ? Promise.resolve(options!.destinationCoordinates!) : geocodeAddressToCoordinates(destinationAddressForGeocode),
+  ]);
+
+  // Sertakan kurir instan + reguler secara default
+  const couriersToQuery = courierCompany && courierCompany.trim().length > 0 ? courierCompany.toLowerCase().trim() : DEFAULT_COURIERS;
+
+  console.log('[BITESHIP_SHIPPING_RESOLVED_IDS_AND_COORDS]', {
     originAreaId: resolvedOriginId,
-    destinationInput: cleanDestinationInput,
     destinationAreaId: resolvedDestinationId,
+    originCoordinates: resolvedOriginCoords,
+    destinationCoordinates: resolvedDestinationCoords,
     weightGrams: safeWeightGrams,
-    courierCompany: courierCompany || 'default',
+    couriers: couriersToQuery,
   });
 
-  // 3. Hitung Tarif Ongkir via API Biteship
+  // 4. Hitung Tarif Ongkir via API Biteship
   try {
-    const rates = await getBiteshipRates(resolvedOriginId, resolvedDestinationId, safeWeightGrams, courierCompany);
+    const rates = await getBiteshipRates(resolvedOriginId, resolvedDestinationId, safeWeightGrams, couriersToQuery, resolvedOriginCoords, resolvedDestinationCoords);
 
     if (rates.length === 0) {
       return {
@@ -303,6 +302,8 @@ export async function getShippingRates(
         rates: [],
         resolvedOriginAreaId: resolvedOriginId,
         resolvedDestinationAreaId: resolvedDestinationId,
+        resolvedOriginCoordinates: resolvedOriginCoords,
+        resolvedDestinationCoordinates: resolvedDestinationCoords,
         errorStage: 'rates',
         error: 'Tidak ada layanan kurir yang tersedia untuk rute pengiriman ini.',
       };
@@ -313,6 +314,8 @@ export async function getShippingRates(
       rates,
       resolvedOriginAreaId: resolvedOriginId,
       resolvedDestinationAreaId: resolvedDestinationId,
+      resolvedOriginCoordinates: resolvedOriginCoords,
+      resolvedDestinationCoordinates: resolvedDestinationCoords,
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Terjadi kesalahan saat menghitung tarif ongkir dari API Biteship.';
@@ -320,8 +323,10 @@ export async function getShippingRates(
     console.error('[BITESHIP_RATES_ERROR]', {
       originAreaId: resolvedOriginId,
       destinationAreaId: resolvedDestinationId,
+      originCoordinates: resolvedOriginCoords,
+      destinationCoordinates: resolvedDestinationCoords,
       weightGrams: safeWeightGrams,
-      courierCompany: courierCompany || 'default',
+      couriers: couriersToQuery,
       message,
     });
 
